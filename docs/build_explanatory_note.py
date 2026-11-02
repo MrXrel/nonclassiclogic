@@ -1,184 +1,353 @@
-"""Build the explanatory note offline: python docs/build_explanatory_note.py.
+"""Build the PDF according to GOST 7.32-2017, without a title page.
 
-Install docs/requirements.txt first. Fonts and screenshots are local assets;
-the application and its running session are not accessed during this build.
+Run: python docs/build_explanatory_note.py
+Install docs/requirements.txt. Times New Roman must be installed on the
+computer; RAYLEIGH_TIMES_DIR can point to a directory with its TTF files.
+The proprietary Times font files are embedded in the PDF, not redistributed.
+Formatting source: https://protect.gost.ru/gost/details/7d280e43-7036-4a69-8e6e-d15867028343
 """
 from pathlib import Path
 from math import exp
+import os
+import re
 from xml.sax.saxutils import escape
 
 from reportlab.lib import colors
+from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT, TA_JUSTIFY
 from reportlab.lib.pagesizes import A4
+from reportlab.lib.units import mm
 from reportlab.lib.styles import ParagraphStyle
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.platypus import (
-    SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, PageBreak,
-    Preformatted, Image, KeepTogether,
+    BaseDocTemplate, PageTemplate, Frame, Paragraph, Spacer, Table, TableStyle,
+    PageBreak, Preformatted, Image, KeepTogether, Flowable,
 )
-from reportlab.graphics.shapes import Drawing, Line, PolyLine, String, Rect, Circle
+from reportlab.platypus.tableofcontents import TableOfContents
+from reportlab.graphics.shapes import Drawing, Line, PolyLine, String, Rect
 
 HERE = Path(__file__).resolve().parent
 OUT = HERE / "Пояснительная_записка.pdf"
 REPO = "https://github.com/MrXrel/nonclassiclogic"
-W = A4[0] - 112
-INK = colors.HexColor("#202124")
-GRAY = colors.HexColor("#60666C")
-LINE = colors.HexColor("#D6DADF")
-LIGHT = colors.HexColor("#F2F4F6")
+LEFT, RIGHT, TOP, BOTTOM = 30*mm, 15*mm, 20*mm, 20*mm
+W = A4[0] - LEFT - RIGHT
+H = A4[1] - TOP - BOTTOM
+INDENT = 12.5*mm
+FONT_SIZE, LEADING = 14, 21
+INK = GRAY = LINE = colors.black
+LIGHT = colors.white
 DATA = [colors.HexColor(x) for x in ["#447C85", "#526DA9", "#C78343"]]
 
-for name, file in [("Body", "DejaVuSans.ttf"), ("Bold", "DejaVuSans-Bold.ttf"),
-                   ("Mono", "DejaVuSansMono.ttf")]:
-    pdfmetrics.registerFont(TTFont(name, str(HERE / "fonts" / file)))
+
+def times_files():
+    locations = [Path(os.environ.get("RAYLEIGH_TIMES_DIR", "/__not_set__")),
+                 Path("/System/Library/Fonts/Supplemental"),
+                 Path(os.environ.get("WINDIR", "C:/Windows")) / "Fonts",
+                 Path.home()/".local/share/fonts", Path("/usr/share/fonts/truetype/msttcorefonts")]
+    for directory in locations:
+        for regular, bold in [("Times New Roman.ttf", "Times New Roman Bold.ttf"),
+                              ("times.ttf", "timesbd.ttf"),
+                              ("Times_New_Roman.ttf", "Times_New_Roman_Bold.ttf")]:
+            if (directory/regular).is_file() and (directory/bold).is_file():
+                return directory/regular, directory/bold
+    raise RuntimeError("Установите Times New Roman или задайте RAYLEIGH_TIMES_DIR с его TTF-файлами.")
+
+
+regular, bold = times_files()
+for name, file in [("Body", regular), ("Bold", bold),
+                   ("Math", HERE/"fonts/DejaVuSans.ttf"),
+                   ("Mono", HERE/"fonts/DejaVuSansMono.ttf")]:
+    pdfmetrics.registerFont(TTFont(name, str(file)))
 pdfmetrics.registerFontFamily("Body", normal="Body", bold="Bold", italic="Body", boldItalic="Bold")
 S = {
-    "body": ParagraphStyle("body", fontName="Body", fontSize=10.1, leading=15.1, textColor=INK, spaceAfter=9),
-    "small": ParagraphStyle("small", fontName="Body", fontSize=8.4, leading=12.2, textColor=GRAY, spaceAfter=8),
-    "h1": ParagraphStyle("h1", fontName="Bold", fontSize=20, leading=26, spaceAfter=17, textColor=INK),
-    "h2": ParagraphStyle("h2", fontName="Bold", fontSize=11.2, leading=16, spaceBefore=10, spaceAfter=7, textColor=INK, keepWithNext=True),
-    "kicker": ParagraphStyle("kicker", fontName="Bold", fontSize=8, leading=12, textColor=GRAY, spaceAfter=9),
-    "formula": ParagraphStyle("formula", fontName="Body", fontSize=11, leading=21, spaceBefore=5, spaceAfter=11, textColor=INK),
-    "cell": ParagraphStyle("cell", fontName="Body", fontSize=8.5, leading=12.5, textColor=INK),
-    "head": ParagraphStyle("head", fontName="Bold", fontSize=8.5, leading=12.5, textColor=INK),
-    "code": ParagraphStyle("code", fontName="Mono", fontSize=8, leading=12, textColor=INK, backColor=LIGHT, borderPadding=9, spaceBefore=7, spaceAfter=13),
-    "cover": ParagraphStyle("cover", fontName="Bold", fontSize=25, leading=34, textColor=INK, spaceAfter=20),
+    "body": ParagraphStyle("body", fontName="Body", fontSize=14, leading=21, alignment=TA_JUSTIFY,
+                           firstLineIndent=INDENT, spaceAfter=0, textColor=INK, allowWidows=0, allowOrphans=0),
+    "small": ParagraphStyle("small", fontName="Body", fontSize=14, leading=21, alignment=TA_JUSTIFY,
+                            firstLineIndent=INDENT, spaceAfter=0, textColor=INK, allowWidows=0, allowOrphans=0),
+    "section": ParagraphStyle("section", fontName="Bold", fontSize=14, leading=21, alignment=TA_LEFT,
+                              leftIndent=INDENT, spaceBefore=21, spaceAfter=21, textColor=INK, keepWithNext=True),
+    "structural": ParagraphStyle("structural", fontName="Bold", fontSize=14, leading=21,
+                                 alignment=TA_CENTER, spaceAfter=21, textColor=INK, keepWithNext=True),
+    "caption": ParagraphStyle("caption", fontName="Body", fontSize=12, leading=14, alignment=TA_CENTER,
+                              spaceAfter=21, textColor=INK),
+    "table_caption": ParagraphStyle("table_caption", fontName="Body", fontSize=14, leading=16,
+                                    alignment=TA_LEFT, spaceAfter=7, textColor=INK, keepWithNext=True),
+    "cell": ParagraphStyle("cell", fontName="Body", fontSize=12, leading=14, textColor=INK),
+    "head": ParagraphStyle("head", fontName="Body", fontSize=12, leading=14, alignment=TA_CENTER, textColor=INK),
+    "formula": ParagraphStyle("formula", fontName="Math", fontSize=12, leading=20, alignment=TA_CENTER, textColor=INK),
+    "number": ParagraphStyle("number", fontName="Body", fontSize=14, leading=20, alignment=TA_RIGHT, textColor=INK),
+    "code": ParagraphStyle("code", fontName="Mono", fontSize=12, leading=14, textColor=INK, spaceBefore=21, spaceAfter=21),
+    "center": ParagraphStyle("center", fontName="Body", fontSize=14, leading=21, alignment=TA_CENTER, spaceAfter=21),
 }
 story = []
+active_prefix = None
+sub_counter = 0
+table_counter = 0
+formula_counter = 0
+figure_counter = 0
+heading_counter = 0
+pending_leadin = None
+
+TABLE_NAMES = [
+    "Основные функции программы", "Границы срезов при σ = 2",
+    "Правила интервальной арифметики", "Результаты операций при α = 0,5",
+    "Сравнение величин с σA = 1 и σB = 2", "Этапы иерархической кластеризации",
+    "Режимы разрезания дерева", "Настройки HDBSCAN",
+    "Сценарии генерации набора", "Компоненты программного комплекса",
+    "Признаки готовности приложения", "Проверка корректности разбиения",
+    "Контрольные результаты кластеризации", "Форматы сохранения результатов",
+]
+FIGURE_NAMES = ["Влияние параметра σ на функцию принадлежности",
+                "Архитектура программного комплекса", "Раздел «Модель»",
+                "Сравнение разбиений одного набора"]
+
+
+def supported(text):
+    """Use a math font only for glyphs absent from Times New Roman."""
+    cmap = pdfmetrics.getFont("Body").face.charToGlyph
+    return "".join(c if ord(c) < 128 or ord(c) in cmap else f'<font name="Math">{c}</font>' for c in text)
 
 
 def p(text, style="body"):
-    story.append(Paragraph(text, S[style]))
+    global pending_leadin
+    if pending_leadin:
+        text = pending_leadin + ". " + text
+        pending_leadin = None
+    # Bold is reserved for report headings. References use plain numbered entries.
+    text = text.replace("<b>", "").replace("</b>", "")
+    text = re.sub(r"^(\[)(\d+)(\])", r"\2", text)
+    if text.startswith("Рисунок "):
+        add_caption()
+        return
+    if re.match(r"1\. ", text):
+        for item in text.split("<br/>"):
+            item = re.sub(r"^(\d+)\. ", r"\1) ", item)
+            story.append(Paragraph(supported(item), S[style]))
+        return
+    story.append(Paragraph(supported(text), S[style]))
 
 
-def h(text):
-    p(text, "h2")
+def add_heading(text, key, level=0, structural=False, toc=True):
+    global heading_counter
+    heading_counter += 1
+    paragraph = Paragraph(supported(text), S["structural" if structural else "section"])
+    paragraph.report_heading = (level, text, key, toc)
+    story.append(paragraph)
+
+
+def structural(title, anchor, toc=True):
+    global active_prefix, sub_counter
+    if story:
+        story.append(PageBreak())
+    active_prefix, sub_counter = None, 0
+    add_heading(title, anchor, structural=True, toc=toc)
+
+
+def section(title, anchor):
+    global active_prefix, sub_counter
+    prefix = title.split(" ", 1)[0]
+    if "." not in prefix and story:
+        story.append(PageBreak())
+    active_prefix, sub_counter = prefix, 0
+    add_heading(title, anchor, level=prefix.count("."))
+
+
+def h(title):
+    global sub_counter, pending_leadin
+    if "." in active_prefix:
+        pending_leadin = title
+        return
+    sub_counter += 1
+    prefix = f"{active_prefix}.{sub_counter}"
+    add_heading(f"{prefix} {title}", f"heading-{heading_counter+1}", level=prefix.count("."))
 
 
 def f(text):
-    p(text, "formula")
+    global formula_counter
+    formula_counter += 1
+    if text.startswith("D(A, B) = √"):
+        text = "D(A, B) = √{ ∫<sub>ε</sub><super>1</super> Δ<super>2</super>(α) dα / [2(1 - ε)] }."
+        definitions = ["D(A, B) - расстояние между величинами;", "Δ²(α) = [LA(α) - LB(α)]² + [UA(α) - UB(α)]²;", "LA, LB, UA, UB - границы срезов величин A и B;", "ε - порог отсечения хвоста."]
+    elif text.startswith("f(x;"):
+        definitions = ["f(x; σ) - плотность распределения Рэлея;", "x - значение случайной величины;", "σ - положительный параметр масштаба."]
+    elif text.startswith("d ln f"):
+        definitions = ["f(σ; σ) - значение плотности в точке максимума;", "σ - параметр масштаба."]
+    elif text.startswith("μ"):
+        definitions = ["μσ(x) - степень принадлежности значения x нечёткой величине;", "σ - параметр масштаба исходной функции."]
+    elif text.startswith("A<sub>"):
+        definitions = ["Aα - α-срез нечёткой величины A;", "μA(x) - функция принадлежности;", "LA(α), UA(α) - левая и правая границы среза;", "α - уровень принадлежности."]
+    elif text.startswith("r(A)"):
+        definitions = ["r(A) - ранг нечёткой величины A;", "ε - нижний рабочий уровень принадлежности;", "LA(α), UA(α) - границы среза на уровне α."]
+    elif text.startswith("D<sub>complete"):
+        definitions = ["Dcomplete(G, H) - расстояние полной связи между группами G и H;", "D(A, B) - расстояние между объектами A и B."]
+    elif text.startswith("W(K)"):
+        definitions = ["W(K) - внутригрупповой разброс для K кластеров;", "Gg - множество объектов группы g;", "σi - нормированный параметр объекта i;", "σ̄g - среднее значение параметра в группе g;", "Wref(K) - разброс в контрольном наборе;", "mean - среднее по контрольным наборам."]
+    elif text.startswith("s(K)"):
+        definitions = ["s(K) - оценка погрешности критерия Gap;", "SD - выборочное стандартное отклонение;", "B - число контрольных наборов;", "K* - число кластеров с максимальным Gap;", "Kвыбр - выбранное число кластеров."]
+    else:
+        definitions = ["Dmr(A, B) - расстояние взаимной достижимости;", "corek(A), corek(B) - расстояния до k-го соседа;", "D(A, B) - исходное расстояние между объектами."]
+    formula = Table([["", Paragraph(text, S["formula"]), Paragraph(f"({formula_counter})", S["number"])]], colWidths=[32, W-64, 32])
+    formula.setStyle(TableStyle([("VALIGN", (0,0), (-1,-1), "MIDDLE"),
+                                 ("LEFTPADDING", (0,0), (-1,-1), 0), ("RIGHTPADDING", (0,0), (-1,-1), 0),
+                                 ("TOPPADDING", (0,0), (-1,-1), 0), ("BOTTOMPADDING", (0,0), (-1,-1), 0)]))
+    explanation = Paragraph(supported("где " + "<br/>".join(definitions)), S["body"])
+    story.append(KeepTogether([Spacer(1,21), formula, Spacer(1,21), explanation]))
 
-
-def page(number, title, anchor):
-    if story:
-        story.append(PageBreak())
-    p(f"ПОЯСНИТЕЛЬНАЯ ЗАПИСКА / {number:02d}", "kicker")
-    p(f'<a name="{anchor}"/>{title}', "h1")
 
 
 def table(rows, widths=None, compact=False):
-    cells = [[Paragraph(str(c), S["head" if i == 0 else "cell"]) for c in row]
-             for i, row in enumerate(rows)]
-    t = Table(cells, colWidths=widths or [W / len(rows[0])] * len(rows[0]), repeatRows=1, hAlign="LEFT")
-    t.setStyle(TableStyle([
-        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#E7EAED")),
-        ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, LIGHT]),
-        ("VALIGN", (0, 0), (-1, -1), "TOP"),
-        ("GRID", (0, 0), (-1, -1), .4, LINE),
-        ("TOPPADDING", (0, 0), (-1, -1), 4 if compact else 6),
-        ("BOTTOMPADDING", (0, 0), (-1, -1), 4 if compact else 6),
-        ("LEFTPADDING", (0, 0), (-1, -1), 8),
-        ("RIGHTPADDING", (0, 0), (-1, -1), 8),
-    ]))
-    story.extend([t, Spacer(1, 9)])
+    global table_counter
+    table_counter += 1
+    number = table_counter
+    p(f"Соответствующие сведения приведены в таблице {number}.")
+    caption = Paragraph(f"Таблица {number} - {TABLE_NAMES[number-1]}", S["table_caption"])
+    cells = [[Paragraph(supported(str(cell)), S["head" if i==0 else "cell"]) for cell in row] for i,row in enumerate(rows)]
+    t = Table(cells, colWidths=widths or [W/len(rows[0])]*len(rows[0]), hAlign="LEFT")
+    t.setStyle(TableStyle([("VALIGN", (0,0), (-1,-1), "TOP"), ("GRID", (0,0), (-1,-1), .5, colors.black),
+                          ("TOPPADDING", (0,0), (-1,-1), 5), ("BOTTOMPADDING", (0,0), (-1,-1), 5),
+                          ("LEFTPADDING", (0,0), (-1,-1), 6), ("RIGHTPADDING", (0,0), (-1,-1), 6)]))
+    story.extend([Spacer(1,12), KeepTogether([caption,t]), Spacer(1,21)])
 
 
 def code(text):
+    for line in text.splitlines():
+        if pdfmetrics.stringWidth(line, "Mono", 12) > W:
+            raise ValueError(f"Строку листинга нужно перенести: {line}")
     story.append(Preformatted(text, S["code"]))
 
 
+def add_caption():
+    global figure_counter
+    figure_counter += 1
+    drawing = story.pop()
+    caption = Paragraph(f"Рисунок {figure_counter} - {FIGURE_NAMES[figure_counter-1]}", S["caption"])
+    story.append(KeepTogether([drawing, Spacer(1,12), caption]))
+
+
 def shot(name, caption, width=W):
-    story.append(Image(str(HERE / "images" / f"{name}.png"), width=width, height=width * 900 / 1440))
-    p(caption, "small")
+    p(f"Внешний вид соответствующего раздела показан на рисунке {figure_counter+1}.")
+    story.append(Image(str(HERE/"images"/f"{name}.png"), width=width, height=width*900/1440))
+    add_caption()
 
 
 def curve_plot():
-    d = Drawing(W, 215)
-    left, bottom, width, height = 39, 27, W - 54, 145
-    for y in [0, .5, 1]:
-        yy = bottom + height * y
-        d.add(Line(left, yy, left + width, yy, strokeColor=LINE, strokeWidth=.5))
-        d.add(String(left - 9, yy - 3, str(y).replace(".", ","), fontName="Body", fontSize=8, textAnchor="end", fillColor=GRAY))
-    for i, sigma in enumerate([1, 2, 3]):
-        pts = []
+    p("Влияние параметра масштаба на форму кривой показано на рисунке 1.")
+    d = Drawing(W, 240)
+    left,bottom,width,height = 39,32,W-54,160
+    for y in [0,.5,1]:
+        yy=bottom+height*y
+        d.add(Line(left,yy,left+width,yy,strokeColor=colors.black,strokeWidth=.35))
+        d.add(String(left-9,yy-4,str(y).replace(".",","),fontName="Body",fontSize=12,textAnchor="end"))
+    for i,sigma in enumerate([1,2,3]):
+        pts=[]
         for j in range(401):
-            x = j * 10 / 400
-            mu = x / sigma * exp((1 - (x / sigma) ** 2) / 2) if x else 0
-            pts.extend((left + width * x / 10, bottom + height * mu))
-        d.add(PolyLine(pts, strokeColor=DATA[i], strokeWidth=1.8))
-        d.add(Line(left + i * 130, 202, left + 18 + i * 130, 202, strokeColor=DATA[i], strokeWidth=2))
-        d.add(String(left + 24 + i * 130, 199, f"σ = {sigma}", fontName="Body", fontSize=9, fillColor=INK))
-    for x in range(0, 11, 2):
-        d.add(String(left + width * x / 10, bottom - 14, str(x), fontName="Body", fontSize=8, textAnchor="middle", fillColor=GRAY))
-    d.add(String(5, 177, "μ(x)", fontName="Body", fontSize=9, fillColor=GRAY))
-    d.add(String(W - 15, 5, "x", fontName="Body", fontSize=9, fillColor=GRAY))
+            x=j*10/400;mu=x/sigma*exp((1-(x/sigma)**2)/2) if x else 0
+            pts.extend((left+width*x/10,bottom+height*mu))
+        d.add(PolyLine(pts,strokeColor=DATA[i],strokeWidth=1.5))
+        d.add(Line(left+i*130,222,left+18+i*130,222,strokeColor=DATA[i],strokeWidth=2))
+        d.add(String(left+24+i*130,218,f"σ = {sigma}",fontName="Body",fontSize=12))
+    for x in range(0,11,2):d.add(String(left+width*x/10,bottom-17,str(x),fontName="Body",fontSize=12,textAnchor="middle"))
+    d.add(String(4,199,"μ(x)",fontName="Body",fontSize=12))
+    d.add(String(W-15,6,"x",fontName="Body",fontSize=12))
     story.append(d)
 
 
 def architecture():
-    d = Drawing(W, 195)
-    def box(x, y, width, title, subtitle):
-        d.add(Rect(x, y, width, 46, fillColor=LIGHT, strokeColor=LINE, strokeWidth=.7))
-        d.add(String(x + 11, y + 28, title, fontName="Bold", fontSize=9, fillColor=INK))
-        d.add(String(x + 11, y + 12, subtitle, fontName="Body", fontSize=8, fillColor=GRAY))
-    def arrow(x1, y1, x2, y2):
-        d.add(Line(x1, y1, x2, y2, strokeColor=GRAY, strokeWidth=.8))
-        if y1 != y2:
-            d.add(Line(x2, y2, x2 - 3, y2 + 5, strokeColor=GRAY))
-            d.add(Line(x2, y2, x2 + 3, y2 + 5, strokeColor=GRAY))
+    p("Взаимосвязь компонентов показана на рисунке 2.")
+    d=Drawing(W,210)
+    def box(x,y,width,title,subtitle):
+        d.add(Rect(x,y,width,48,fillColor=colors.white,strokeColor=colors.black,strokeWidth=.5))
+        d.add(String(x+9,y+29,title,fontName="Body",fontSize=12))
+        d.add(String(x+9,y+11,subtitle,fontName="Body",fontSize=12))
+    def arrow(x1,y1,x2,y2):
+        d.add(Line(x1,y1,x2,y2,strokeColor=colors.black,strokeWidth=.5))
+        if y1!=y2:
+            for dx in [-3,3]:d.add(Line(x2,y2,x2+dx,y2+5,strokeColor=colors.black,strokeWidth=.5))
         else:
-            d.add(Line(x2, y2, x2 + 5, y2 - 3, strokeColor=GRAY))
-            d.add(Line(x2, y2, x2 + 5, y2 + 3, strokeColor=GRAY))
-    box(0, 145, W, "Интерфейс: app.py + ui_style.py + lab_support.py", "Streamlit, Plotly, браузерный компонент модели")
-    half = (W - 25) / 2
-    box(0, 69, half, "fuzzy_core", "Модель, срезы, операции, файлы")
-    box(half + 25, 69, half, "fuzzy_clustering", "Полная связь, Gap, HDBSCAN")
-    arrow(half / 2, 145, half / 2, 115)
-    arrow(W - half / 2, 145, W - half / 2, 115)
-    arrow(half + 25, 91, half, 91)
-    box(0, 0, W, "Обмен данными: JSON / CSV", "Сессия сохраняется по действию пользователя")
-    arrow(half / 2, 69, half / 2, 46)
+            for dy in [-3,3]:d.add(Line(x2,y2,x2+5,y2+dy,strokeColor=colors.black,strokeWidth=.5))
+    half=(W-25)/2
+    box(0,158,W,"Интерфейс пользователя","app.py, ui_style.py, lab_support.py")
+    box(0,80,half,"fuzzy_core","Модель, операции, файлы")
+    box(half+25,80,half,"fuzzy_clustering","Полная связь, Gap, HDBSCAN")
+    box(0,0,W,"Обмен данными: JSON / CSV","Сохранение сессии по действию пользователя")
+    arrow(half/2,158,half/2,128);arrow(W-half/2,158,W-half/2,128)
+    arrow(half+25,104,half,104);arrow(half/2,80,half/2,48)
     story.append(d)
 
 
-# 1. Title page. The author/group are deliberately not invented.
-p("Московский авиационный институт\n(национальный исследовательский университет)")
-p("Институт компьютерных наук (институт № 8)", "small")
-story.append(Spacer(1, 105))
-p("ПОЯСНИТЕЛЬНАЯ<br/>ЗАПИСКА", "cover")
-p("к программному комплексу<br/><b>«Лаборатория нечётких величин Рэлея»</b>", "formula")
-p("Дисциплина «Неклассические логики»<br/>Вариант 9. Функция формы Рэлея")
-story.append(Spacer(1, 35))
-p("Назначение и математическая модель · алгоритмы и архитектура · получение, установка и руководство пользователя", "small")
-p(f'<link href="{REPO}">{REPO}</link>', "small")
-p("Описание соответствует версии программы 1.5.0.<br/>Дата подготовки: 2 ноября 2026 года.", "small")
-story.append(Spacer(1, 90))
-p("Москва, 2026")
+class AbstractStats(Flowable):
+    def wrap(self, width, height):
+        doc=self.canv._doctemplate
+        total=getattr(doc,"previous_total",0)
+        text=f"Пояснительная записка в одной книге: {total} с., {figure_counter} рис., {table_counter} табл., 9 источников, 1 прил."
+        self.paragraph=Paragraph(text,S["body"])
+        self.width,self.height=self.paragraph.wrap(width,height)
+        return self.width,self.height
+    def draw(self):
+        self.paragraph.drawOn(self.canv,0,0)
 
-page(2, "Содержание", "contents")
-toc = [
-    ("1. Общая характеристика программы", 3, "purpose"),
-    ("2. Математический аппарат", 4, "math"),
-    ("2.1. Представление через α-срезы", 5, "cuts"),
-    ("2.2. Арифметические операции", 6, "arithmetic"),
-    ("2.3. Сравнение и расстояние", 7, "distance"),
-    ("3. Кластеризация полной связью", 8, "complete"),
-    ("3.1. Автоматический выбор числа групп", 9, "gap"),
-    ("3.2. Сравнение с HDBSCAN", 10, "density"),
-    ("4. Логика моделирования набора", 11, "generation"),
-    ("5. Архитектура и независимые библиотеки", 12, "architecture"),
-    ("6. Получение и установка программы", 13, "install"),
-    ("6.1. Запуск, остановка и признаки готовности", 14, "launch"),
-    ("7. Работа пользователя: модель и операции", 15, "usage1"),
-    ("7.1. Работа с набором и кластерами", 16, "usage2"),
-    ("8. Как проверить правильность объединения", 17, "validation"),
-    ("9. Сохранение, испытания и ограничения", 18, "files"),
-    ("Источники", 19, "references"),
-]
-table([["Раздел", "Стр."]] + [[f'<link href="#{a}">{t}</link>', str(n)] for t, n, a in toc], [W - 48, 48])
-p("Термины: σ - параметр масштаба отдельной величины; α - степень принадлежности; ε - порог отсечения хвоста; N - число величин; K - число кластеров; T - порог расстояния.", "small")
 
-page(3, "1. Общая характеристика", "purpose")
+class GostDoc(BaseDocTemplate):
+    observed_total=0
+    def beforeDocument(self):
+        self.previous_total=self.observed_total
+        self.observed_total=0
+        self.canv.setTitle("Пояснительная записка. Нечёткие величины Рэлея")
+        self.canv.setAuthor("MrXrel")
+        self.canv.setSubject("ГОСТ 7.32-2017, без титульного листа. Версия программы 1.5.0")
+    def afterPage(self):
+        self.observed_total=self.page
+    def afterFlowable(self, flowable):
+        data=getattr(flowable,"report_heading",None)
+        if data:
+            level,text,key,toc=data
+            self.canv.bookmarkPage(key)
+            self.canv.addOutlineEntry(text,key,level=level,closed=False)
+            if toc:self.notify("TOCEntry",(level,text,self.page,key))
+
+
+def footer(canvas, doc):
+    canvas.saveState();canvas.setFont("Body",12)
+    canvas.drawCentredString(A4[0]/2,10*mm,str(doc.page));canvas.restoreState()
+
+
+def appendix():
+    structural("ПРИЛОЖЕНИЕ А", "appendix",toc=False)
+    story[-1].report_heading=(0,"Приложение А Сборка пояснительной записки","appendix",True)
+    p("(справочное)","center")
+    p("Сборка пояснительной записки","center")
+
+
+structural("РЕФЕРАТ","abstract",toc=False)
+story.append(AbstractStats())
+p("НЕЧЁТКАЯ ВЕЛИЧИНА, РАСПРЕДЕЛЕНИЕ РЭЛЕЯ, ФУНКЦИЯ ПРИНАДЛЕЖНОСТИ, АЛЬФА-СРЕЗ, ИНТЕРВАЛЬНАЯ АРИФМЕТИКА, КЛАСТЕРИЗАЦИЯ, GAP STATISTIC, HDBSCAN, PYTHON")
+p("Объект разработки - программный комплекс для работы с нечёткими величинами формы Рэлея. Цель работы - реализовать представление величин, арифметические операции и кластерный анализ их множества.")
+p("Использованы нормировка плотности по максимуму, представление через α-срезы, интервальная арифметика, иерархическая кластеризация полной связью, критерий Gap и алгоритм HDBSCAN.")
+p("Разработаны независимые вычислительные библиотеки и локальный графический интерфейс. Реализованы воспроизводимая генерация наборов, сравнение методов, сохранение и восстановление сессии. Корректность подтверждена контрольными расчётами и 114 автоматическими проверками.")
+p("Область применения - учебные исследования нечётких величин и сравнение способов кластеризации. В записке приведены математическая модель, архитектура, порядок установки и работы пользователя.")
+
+structural("СОДЕРЖАНИЕ","contents",toc=False)
+toc=TableOfContents();toc.dotsMinLevel=0
+toc.levelStyles=[ParagraphStyle(f"toc-{i}",fontName="Body",fontSize=14,leading=21,
+                               leftIndent=i*14,firstLineIndent=0,rightIndent=25,
+                               spaceBefore=0,spaceAfter=0,textColor=INK) for i in range(3)]
+story.append(toc)
+
+structural("ПЕРЕЧЕНЬ СОКРАЩЕНИЙ И ОБОЗНАЧЕНИЙ","symbols")
+for text in ["API - программный интерфейс библиотеки;", "ARI - скорректированный индекс Рэнда для сравнения разбиений;",
+             "CSV - текстовый формат табличных данных;", "Gap - критерий выбора числа кластеров;",
+             "HDBSCAN - алгоритм плотностной иерархической кластеризации;", "JSON - текстовый формат сохранения сессии;",
+             "K - число кластеров;", "N - число нечётких величин в наборе;", "T - порог расстояния;",
+             "α - уровень принадлежности;", "ε - порог отсечения хвоста функции;", "σ - положительный параметр масштаба величины Рэлея."]:
+    p(text)
+
+structural("ВВЕДЕНИЕ","intro")
+p("Нечёткие величины применяются для представления численных характеристик, значения которых описываются степенью принадлежности, а не одним точным числом. Работа с множеством таких величин требует согласованных способов отображения, выполнения операций и оценки сходства.")
+p("В рамках практического занятия по дисциплине «Неклассические логики» рассматривается вариант 9: функция принадлежности строится на основе формы распределения Рэлея. Цель разработки состоит в создании локальной программы, позволяющей исследовать эту модель и распределять множество нечётких величин по кластерам.")
+p("Для достижения цели требуется выбрать представление величины, реализовать сложение, вычитание, умножение, деление и сравнение, подготовить генератор наборов и средства кластерного анализа. Вычислительные процедуры должны быть пригодны для независимого использования внешними программами.")
+p("В разработанном комплексе вычисления выполняются через α-срезы. Пользователь может сравнить полную связь с автоматическим выбором числа групп и HDBSCAN, проверить разбиение на синтетических данных и сохранить результаты. В записке последовательно изложены модель, алгоритмы, архитектура, установка, порядок работы и способы контроля.")
+
+section("1 Общая характеристика программы", "purpose")
 p("Программный комплекс предназначен для представления нечётких величин формы Рэлея, выполнения операций над ними и кластерного анализа множества таких величин. Он разработан для комплексного практического занятия по дисциплине «Неклассические логики» [1].")
 p("Единицей данных является отдельная нечёткая величина со своим σ &gt; 0. Набор из 150 объектов содержит 150 функций принадлежности, а не 150 случайных значений одной функции. Принадлежность каждого x описывает его согласованность с моделью величины.")
 table([["Группа функций", "Что выполняет программа"],
@@ -188,11 +357,10 @@ table([["Группа функций", "Что выполняет програм
        ["Анализ", "Полная связь: ровно K, порог T или автоматический выбор K; сравнение с HDBSCAN"],
        ["Обмен", "Сохранение и загрузка JSON-сессии; выгрузка таблицы CSV"],
        ["Вспомогательные", "Проверка параметров, поиск границ, интерполяция, ранжирование, расчёт расстояний и ARI"]], [133, W - 133])
-h("Средства реализации")
-p("Программа написана на Python. Streamlit формирует локальный веб-интерфейс, Plotly строит интерактивные графики. NumPy используется для массивов и интегрирования, SciPy - для корней и иерархической кластеризации, scikit-learn - для HDBSCAN. Вычислительные библиотеки работают отдельно от интерфейса.")
+
 p("После установки зависимостей интернет для расчётов не требуется. В приложении четыре раздела: «Модель», «Операции», «Набор» и «Кластеры». Журнал действий в этой версии отключён по выбранному составу интерфейса; технический вывод сервера остаётся доступен для диагностики.", "small")
 
-page(4, "2. Математический аппарат", "math")
+section("2 Математический аппарат", "math")
 h("От случайной величины к нечёткой")
 p("За основу формы берётся плотность распределения Рэлея без сдвига [2]. Она возникает, например, как распределение длины вектора с двумя независимыми нормальными компонентами с нулевыми средними и одинаковым масштабом σ. В данной работе используется именно форма этой плотности, а её вероятностный смысл заменяется смыслом принадлежности.")
 f("f(x; σ) = (x / σ<super>2</super>) · exp[-x<super>2</super> / (2σ<super>2</super>)], x &gt; 0, σ &gt; 0.")
@@ -205,7 +373,7 @@ curve_plot()
 p("Рисунок 1. Изменение масштаба при сохранении формы и единичной высоты.", "small")
 p("μ(x) = 0,5 означает степень принадлежности 0,5, а не вероятность 50%. Площадь под μ не обязана равняться 1. Программа не оценивает вероятность попадания в интервал и не обучает вероятностную модель по наблюдениям.")
 
-page(5, "2.1. Представление через α-срезы", "cuts")
+section("2.3 Представление через α-срезы", "cuts")
 p("α-срез объединяет значения x, принадлежность которых не меньше выбранного α. Для кривой Рэлея он является замкнутым интервалом [3]:")
 f("A<sub>α</sub> = {x : μ<sub>A</sub>(x) ≥ α} = [L<sub>A</sub>(α), U<sub>A</sub>(α)], 0 &lt; α ≤ 1.")
 p("При росте α левая граница движется вправо, а правая - влево. Поэтому срезы вложены. При α = 1 интервал вырождается в точку [σ; σ]. Это также является проверкой нормальности функции принадлежности: её максимальное значение равно 1.")
@@ -222,7 +390,7 @@ p("Исходная функция имеет бесконечный правы�
 p("RayleighFuzzy вычисляет исходный срез по корням уравнения. AlphaCutFuzzy хранит массивы α, L и U; между узлами границы линейно интерполируются. Отсечённый хвост нельзя восстановить простым уменьшением ε у уже сохранённого результата.", "small")
 p("В живом графике браузер пересчитывает корни бисекцией на каждом событии input. Окончательный уровень передаётся в Python после отпускания ползунка. Это позволяет видеть движение среза без ожидания перезапуска всего интерфейса.", "small")
 
-page(6, "2.2. Арифметические операции", "arithmetic")
+section("2.4 Арифметические операции", "arithmetic")
 p("На каждом рабочем уровне α берутся два интервала A<sub>α</sub> = [a; b] и B<sub>α</sub> = [c; d]. Операция выполняется над ними по правилам интервальной арифметики [3]. Результат всех 401 операций образует новую нечёткую величину.")
 p("Это реализация принципа расширения с min для совместной принадлежности независимых аргументов: для результата z рассматриваются все пары x, y с x ◦ y = z и выбирается наибольшее min(μA(x), μB(y)). Выпуклые срезы позволяют выполнять этот расчёт через интервалы.", "small")
 table([["Операция", "Правило для одного α-среза"],
@@ -243,7 +411,7 @@ h("Как хранится результат")
 p("Результат имеет тип AlphaCutFuzzy и хранит собственную форму. После умножения или деления программа не пытается подобрать к нему новый σ. Сохранённый результат C001 можно использовать в следующей операции.")
 p("Операнды трактуются как независимые нечёткие величины в смысле интервального расширения. Если выбрать один объект дважды, A - A обычно даст интервал, а не точный ноль: зависимость двух вхождений одного x здесь не моделируется.", "small")
 
-page(7, "2.3. Сравнение и расстояние", "distance")
+section("2.5 Сравнение и расстояние", "distance")
 h("Ранжирование")
 p("В работе выбран один явно заданный способ упорядочивания: среднее по α значение центра среза. Это скалярная характеристика положения величины, а не вероятность и не полное описание её формы.")
 f("r(A) = [1 / (1 - ε)] ∫<sub>ε</sub><super>1</super> (L<sub>A</sub>(α) + U<sub>A</sub>(α)) / 2 dα.")
@@ -260,7 +428,7 @@ h("Почему график кластеров одномерный")
 p("У исходных величин Lσ(α) = σ·L1(α) и Uσ(α) = σ·U1(α). Подстановка в формулу даёт D(A, B) = C·|σA - σB|, где C ≈ 1,495936 для текущей сетки. Поэтому единственный независимый числовой признак семейства - σ. Вертикальная ось диаграммы показывает категории кластеров.")
 p("Перекрытие на одном уровне 0,5 является дополнительной наглядной характеристикой. Оно не заменяет интегральное расстояние и само по себе не задаёт правило объединения.", "small")
 
-page(8, "3. Кластеризация полной связью", "complete")
+section("3 Кластеризация полной связью", "complete")
 p("Кластеризация группирует близкие нечёткие величины. Основной алгоритм является агломеративным: он начинает с отдельных объектов и последовательно объединяет группы. Исходные метки генератора алгоритму не передаются.")
 h("Последовательность вычислений")
 table([["Шаг", "Действие"],
@@ -280,7 +448,7 @@ table([["Режим", "Смысл результата"],
 p("Дендрограмма показывает высоту объединений. Резкий скачок перед слиянием крупных ветвей указывает на заметный разрыв расстояний. Это полезный диагностический признак, но не доказательство единственно правильного разбиения.")
 p("В пороговом режиме диаметр каждой группы не превышает T с учётом численной погрешности. В режиме ровно K такого порогового ограничения нет. При K больше числа различных объектов одинаковые величины могут оказаться в разных группах ради выполнения условия ровно K.", "small")
 
-page(9, "3.1. Выбор числа групп по Gap", "gap")
+section("3.3 Выбор числа групп по Gap", "gap")
 p("Автоматический режим сравнивает компактность групп с тем, что получилось бы у данных без специально заложенных сгущений. Контрольная модель - равномерное распределение σ между минимумом и максимумом исходного набора.")
 h("Критерий")
 p("Для каждого K строится разбиение полной связью и вычисляется внутригрупповой разброс W(K): сумма квадратов отклонений σ от среднего своей группы. Чтобы единицы измерения не влияли на вычисления, σ предварительно переводятся в диапазон [0; 1].")
@@ -294,7 +462,7 @@ h("Почему может получиться одна или три груп�
 p("Если деление равномерного набора не даёт убедительного выигрыша относительно случайного контроля, допустимо K = 1. У трёх хорошо разделённых скоплений W(3) резко уменьшается, и выбираются три группы. Выбросы могут создать дополнительные небольшие ветви: на контрольном сценарии с выбросами получаются шесть групп.")
 p("Для совпадающих величин и наборов меньше трёх объектов предусмотрена одна группа. Достижение верхней границы поиска отмечается в диагностике. Gap является оценкой относительно выбранной контрольной модели, а не знанием числа источников генерации.", "small")
 
-page(10, "3.2. Сравнение с HDBSCAN", "density")
+section("3.4 Сравнение с HDBSCAN", "density")
 p("HDBSCAN получает те же объекты и ту же матрицу D, что и полная связь. Он выделяет устойчивые плотные скопления и может оставить часть объектов шумом. Число групп и один фиксированный радиус пользователем не задаются [7, 8].")
 h("Логика работы")
 p("Для объекта определяется core-расстояние до k-го соседа. В соглашении scikit-learn сам объект включён в счёт k. Расстояние взаимной достижимости двух объектов определяется так:")
@@ -309,7 +477,7 @@ p("Сценарий «Группы и выбросы», N = 150, seed = 42: по
 p("В приложении шум имеет номер 0 и показан серыми крестиками. Он не входит в число кластеров. У scikit-learn исходная метка шума равна -1; адаптер переводит её в 0. Номера обычных групп локальны для каждого метода.", "small")
 p("При N меньше любого из двух минимумов весь набор считается шумом. Полностью совпадающие объекты образуют одну группу, если она разрешена; иначе возвращается шум. Дендрограмма в интерфейсе относится только к полной связи.", "small")
 
-page(11, "4. Моделирование набора", "generation")
+section("4 Моделирование набора", "generation")
 p("Генератор создаёт значения σ для разных нечётких величин. На основе каждого σ строится собственная кривая Рэлея. Если σ разыгрывается из нормальной смеси, это меняет расположение кривых в наборе, но не превращает сами кривые в нормальные функции принадлежности.")
 table([["Сценарий", "Назначение эксперимента"],
        ["Три разделённые группы", "Поровну объектов из [0,6; 1,2], [2,4; 3,0], [4,8; 5,4]"],
@@ -325,8 +493,9 @@ h("Зачем сохраняются метки источников")
 p("Генератор отдельно записывает, из какого источника получен каждый σ. Эти сведения используются только после кластеризации для проверки диаграмм и ARI. Алгоритм получает items с величинами; параметры сценария и метки ему не передаются.")
 p("Источники не являются эталоном, который всегда возможно восстановить: при сильном перекрытии один σ мог прийти из разных источников. Ручное изменение σ или добавление объекта снимает прежние исходные метки. При загрузке JSON их соответствие набору проверяется по контрольной сумме.", "small")
 
-page(12, "5. Архитектура программы", "architecture")
+section("5 Архитектура программы", "architecture")
 p("Комплекс разделён на вычислительные пакеты, интерфейс и средства запуска. Ни fuzzy_core, ни fuzzy_clustering не импортируют Streamlit или Plotly. Это позволяет использовать расчёты из внешней Python-программы.")
+p("Программа написана на Python. Streamlit формирует локальный веб-интерфейс, Plotly строит интерактивные графики. NumPy используется для массивов и интегрирования, SciPy - для корней и иерархической кластеризации, scikit-learn - для HDBSCAN. Вычислительные библиотеки работают отдельно от интерфейса.")
 architecture()
 p("Рисунок 2. Зависимости компонентов. Стрелка от fuzzy_clustering к fuzzy_core означает использование моделей и срезов.", "small")
 table([["Файл или пакет", "Содержание"],
@@ -340,7 +509,7 @@ table([["Файл или пакет", "Содержание"],
        ["examples/; tests/; docs/", "Примеры, проверки, документация и исходник сборки PDF"]], [179, W-179])
 code("from fuzzy_core import RayleighFuzzy, add\nfrom fuzzy_clustering import cluster_auto\nfrom fuzzy_core import generate\na, b = RayleighFuzzy(1), RayleighFuzzy(2)\nprint(add(a, b).alpha_cut(0.5))\nprint(cluster_auto(generate(150, seed=42)).k)")
 
-page(13, "6. Получение и установка", "install")
+section("6 Получение и установка программы", "install")
 p(f'Проект распространяется через репозиторий <link href="{REPO}"><b>MrXrel/nonclassiclogic</b></link>. Можно скачать Code → Download ZIP и распаковать архив либо клонировать репозиторий командой Git:')
 code("git clone https://github.com/MrXrel/nonclassiclogic.git\ncd nonclassiclogic")
 p("В корне должны находиться app.py, requirements.txt, пакеты fuzzy_core и fuzzy_clustering. Эта записка находится в docs/Пояснительная_записка.pdf, краткое руководство - в docs/Руководство.pdf. В examples/ лежат готовые JSON и CSV для воспроизведения опытов.")
@@ -355,7 +524,7 @@ h("Использование только библиотек")
 code("python -m pip install /путь/к/nonclassiclogic")
 p("Эта команда устанавливает fuzzy_core и fuzzy_clustering с вычислительными зависимостями. Для запуска интерфейса отдельно нужен полный requirements.txt. Сборка самой записки необязательна: готовый PDF уже включён в комплект.", "small")
 
-page(14, "6.1. Запуск и готовность", "launch")
+section("6.5 Запуск и готовность", "launch")
 h("Обычный запуск в терминале")
 code("python -m streamlit run app.py")
 p("Команда выполняется из корня с активированным окружением. Без активации на macOS/Linux можно указать .venv/bin/python, а на Windows - .venv\\Scripts\\python.exe. В Windows также предоставлен run.bat; его работа зависит от открытого окна терминала.")
@@ -372,7 +541,7 @@ table([["Что видно", "Что это означает"],
        ["manage.py status: «Работает»", "Фоновая служба macOS отвечает по адресу приложения"]], [228, W-228])
 p("Если порт 8501 занят, для обычного запуска можно добавить --server.port 8502 и открыть соответствующий адрес. manage.py использует фиксированный порт 8501; он сообщает о конфликте, а не подменяет чужой процесс. Техническая диагностика службы: runtime/server.stderr.log.", "small")
 
-page(15, "7. Модель и операции", "usage1")
+section("7 Работа пользователя", "usage1")
 p("Разделы находятся слева, результаты - в центре, параметры - справа. В узком окне настройки перемещаются вверх; на телефоне меню сворачивается. Подробные объяснения раскрываются по запросу.")
 shot("модель", "Рисунок 3. Раздел «Модель»: σ = 2, α = 0,5, выделенный интервал и его границы.", width=W*.9)
 h("Порядок работы с моделью")
@@ -381,7 +550,7 @@ h("Порядок выполнения операции")
 p("1. Откройте «Операции» и задайте A и B: вручную через σ либо выбором имеющихся объектов.<br/>2. Выберите сложение, вычитание, умножение, деление или сравнение.<br/>3. Сопоставьте исходные кривые, результат и таблицу текущего среза. Уровень α берётся из раздела «Модель».<br/>4. Нажмите «Сохранить результат», если хотите использовать его как следующий операнд или включить в JSON.")
 p("Флажок «Полные рабочие хвосты» расширяет видимый диапазон до ε. В обычном режиме график сфокусирован на текущем срезе. Отрицательная левая граница разности допустима. При отказе деления проверьте, не содержит ли знаменатель ноль.", "small")
 
-page(16, "7.1. Набор и кластеры", "usage2")
+section("7.3 Набор и кластеры", "usage2")
 p("1. В разделе «Набор» справа выберите сценарий, N и seed, затем «Создать набор».<br/>2. При необходимости измените σ в центральной таблице и нажмите «Применить изменения».<br/>3. Перейдите в «Кластеры», выберите «Авто (Gap)», ровно K или T. Для сравнения оставьте включённым HDBSCAN и задайте его минимумы.<br/>4. Нажмите «Рассчитать». Новые настройки применяются именно этой кнопкой.")
 shot("кластеры", "Рисунок 4. Один набор, два разбиения: полная связь с Gap - 6 групп; HDBSCAN - 3 группы и 8 объектов шума.")
 h("Как читать результат")
@@ -389,7 +558,7 @@ p("Верхняя таблица показывает число групп, ш�
 p("Над графиками подписаны настройки выполненного анализа. Выбор новых параметров не меняет эту подпись до повторного расчёта. Ниже переключается метод для просмотра состава и кривых; вкладки показывают дерево полной связи, кривые, состав и расстояния.")
 p("Для проверки раскройте «Проверить по исходным группам»: сравните источники и найденные группы. Кнопка «Скачать CSV» выгружает таблицу; JSON доступен в меню слева. Импорт сессии: «Набор» → «Файлы» → выбрать JSON → «Загрузить сессию».", "small")
 
-page(17, "8. Правильность объединения", "validation")
+section("8 Проверка правильности объединения", "validation")
 p("Нормальная работа программы и содержательная полезность кластеров - разные проверки. Правильно выполненный алгоритм может дать одну группу при перекрытии или несколько мелких групп из-за выбросов. Следует сопоставлять выбранный критерий, данные и результат.")
 table([["Проверка", "Наблюдаемый признак"],
        ["Режим ровно K", "Получено ровно K групп; сумма размеров равна N"],
@@ -408,7 +577,7 @@ h("Как трактовать ARI")
 p("ARI сравнивает разбиения без зависимости от номеров групп [9]. Значение 1 означает совпадение, около 0 - согласие на уровне случайного; возможно отрицательное значение. В приложении заданные генератором выбросы исключены из ARI, а отклонённые обычные объекты остаются с меткой 0. При полном шуме ARI не выводится.")
 p("Высокий ARI следует читать вместе с долей распределённых объектов. Исходные источники при перекрытии могут быть геометрически неразличимы. Число шесть вместо трёх на выбросах поэтому само по себе не является признаком ошибки.", "small")
 
-page(18, "9. Файлы и контроль работы", "files")
+section("9 Файлы и контроль работы", "files")
 h("Сохранение и восстановление")
 table([["Формат", "Содержимое и назначение"],
        ["JSON", "config: ε и сетка; items: величины; results: срезы результатов; clustering: основное разбиение; comparison: HDBSCAN; controls: настройки; generation: сведения об источниках"],
@@ -423,44 +592,39 @@ h("Ограничения и обработка ошибок")
 p("Генерация: 100-300 объектов; после загрузки или добавления набор может содержать 1-300. Сохраняется до 100 результатов операций. Размер JSON - до 10 МБ. Интерфейс принимает σ от 0,000001 до 1000000. Неположительные и неконечные σ, дубликаты ID, невложенные срезы и неверные версии JSON отклоняются.")
 p("Модель имеет один параметр без сдвига; выбор K в «Авто» ограничен десятью. Хвосты отсекаются по ε, интегралы и восстановление результатов являются численными приближениями. Кластеризация остаётся чёткой: нечёткими являются входные величины, а не принадлежность объекта кластеру. Изменение набора сбрасывает старый анализ.", "small")
 
-page(19, "Источники", "references")
+structural("ЗАКЛЮЧЕНИЕ", "conclusion")
+p("В результате работы разработан программный комплекс для представления и кластерного анализа нечётких величин формы Рэлея. Плотность нормирована по максимуму, а вычисления сведены к операциям над вложенными α-срезами с явно заданным порогом отсечения хвоста.")
+p("Реализованы четыре арифметические операции, сравнение по среднему центру срезов, интегральная метрика, воспроизводимая генерация наборов и сохранение сессий. Полная связь поддерживает заданное число групп, порог расстояния и автоматический выбор по Gap. Для исследования влияния плотности и выбросов добавлено сравнение с HDBSCAN.")
+p("Вычислительные библиотеки отделены от пользовательского интерфейса. Подготовлены примеры использования, документация и автоматические проверки. На контрольном наборе из 150 величин с выбросами полная связь с Gap выделяет шесть групп, а HDBSCAN - три группы и восемь шумовых объектов. Расхождение объясняется различием критериев алгоритмов.")
+p("Полученные результаты пригодны для учебных экспериментов. Их интерпретация ограничена однопараметрической моделью без сдвига, конечной сеткой α и выбранными настройками кластеризации. Дальнейшее развитие возможно за счёт расширения семейств функций принадлежности и способов задания зависимостей между операндами.")
+
+structural("СПИСОК ИСПОЛЬЗОВАННЫХ ИСТОЧНИКОВ", "references")
 refs = [
-    ("1", "МАИ. Задание на комплексное практическое занятие по дисциплине «Неклассические логики». Москва, 2026. Предоставлено пользователем; вариант формы Рэлея - 9.", None),
-    ("2", "NIST. Rayleigh probability density function. Исходная плотность; в программе использован частный случай без сдвига.", "https://itl.nist.gov/div898/software/dataplot/refman2/auxillar/raypdf.htm"),
-    ("3", "Lindblad J. Fuzzy numbers and fuzzy arithmetics. Uppsala University, 2010. α-срезы и интервальная арифметика.", "https://user.it.uu.se/~joali534/course/fuzzy/vt10/lectures/L9_4.pdf"),
-    ("4", "SciPy. scipy.cluster.hierarchy.linkage. Агломеративная кластеризация и complete linkage.", "https://docs.scipy.org/doc/scipy/reference/generated/scipy.cluster.hierarchy.linkage.html"),
+    ("1", "МАИ. Задание на комплексное практическое занятие по дисциплине «Неклассические логики». Москва, 2026.", None),
+    ("2", "NIST. Rayleigh probability density function // Dataplot.", "https://itl.nist.gov/div898/software/dataplot/refman2/auxillar/raypdf.htm"),
+    ("3", "Lindblad J. Fuzzy numbers and fuzzy arithmetics. Uppsala University, 2010.", "https://user.it.uu.se/~joali534/course/fuzzy/vt10/lectures/L9_4.pdf"),
+    ("4", "SciPy. scipy.cluster.hierarchy.linkage.", "https://docs.scipy.org/doc/scipy/reference/generated/scipy.cluster.hierarchy.linkage.html"),
     ("5", "Tibshirani R., Walther G., Hastie T. Estimating the Number of Clusters in a Dataset via the Gap Statistic. Stanford University, Technical Report BIO 208, April 2000.", "https://statistics.stanford.edu/technical-reports/estimating-number-clusters-dataset-gap-statistic"),
-    ("6", "R package cluster. clusGap и maxSE. Варианты правила выбора; в программе реализован global 1-SE.", "https://stat.ethz.ch/R-manual/R-devel/library/cluster/html/clusGap.html"),
-    ("7", "Scikit-learn. HDBSCAN API. Параметры, соглашение min_samples и метка шума.", "https://scikit-learn.org/stable/modules/generated/sklearn.cluster.HDBSCAN.html"),
-    ("8", "Scikit-learn. Clustering: HDBSCAN. Core-расстояния, взаимная достижимость и плотностная иерархия.", "https://scikit-learn.org/stable/modules/clustering.html#hdbscan"),
-    ("9", "Scikit-learn. Adjusted Rand Index. Интерпретация согласия разбиений.", "https://scikit-learn.org/stable/modules/generated/sklearn.metrics.adjusted_rand_score.html"),
+    ("6", "R package cluster. clusGap и maxSE.", "https://stat.ethz.ch/R-manual/R-devel/library/cluster/html/clusGap.html"),
+    ("7", "Scikit-learn. HDBSCAN API.", "https://scikit-learn.org/stable/modules/generated/sklearn.cluster.HDBSCAN.html"),
+    ("8", "Scikit-learn. Clustering: HDBSCAN.", "https://scikit-learn.org/stable/modules/clustering.html#hdbscan"),
+    ("9", "Scikit-learn. Adjusted Rand Index.", "https://scikit-learn.org/stable/modules/generated/sklearn.metrics.adjusted_rand_score.html"),
 ]
 for n, title, url in refs:
-    p(f"<b>[{n}]</b> {escape(title)}")
+    entry=f"{n} {escape(title)}"
     if url:
-        p(f'<link href="{escape(url)}">{escape(url)}</link>', "small")
-h("Исходники и воспроизводимость документа")
+        entry += f' URL: <link href="{escape(url)}">{escape(url)}</link> (дата обращения: 02.11.2026).'
+    story.append(KeepTogether([Paragraph(supported(entry), S["body"])]))
+appendix()
 p(f'Репозиторий: <link href="{REPO}">{REPO}</link>. Описание архитектуры, настроек и контрольные результаты сверены с исходным кодом версии 1.5.0. Внешние документы описывают методы; порог ε, расстояние, выбранный вариант Gap и правила приложения являются решениями этой реализации.')
-p("Исходник записки: docs/build_explanatory_note.py. Для пересборки установите docs/requirements.txt и выполните python docs/build_explanatory_note.py из корня. Шрифты и снимки экранов включены в docs/fonts и docs/images; интернет при сборке не нужен. Условия распространения DejaVu находятся в docs/fonts/LICENSE-DejaVu.txt.", "small")
+p("Исходник записки: docs/build_explanatory_note.py. Для пересборки установите docs/requirements.txt и выполните python docs/build_explanatory_note.py из корня. Для сборки необходимо установить Times New Roman; при нестандартном расположении TTF-файлов задаётся переменная RAYLEIGH_TIMES_DIR. Файлы Times New Roman не распространяются вместе с проектом. Снимки экранов и дополнительные шрифты включены в docs/images и docs/fonts. Условия распространения DejaVu приведены в docs/fonts/LICENSE-DejaVu.txt. ", "small")
 
 
-def decorate(c, doc):
-    c.saveState()
-    c.setTitle("Пояснительная записка. Лаборатория нечётких величин Рэлея")
-    c.setAuthor("MrXrel")
-    c.setSubject("Неклассические логики. Вариант 9. Версия 1.5.0")
-    if doc.page > 1:
-        c.setStrokeColor(LINE)
-        c.setLineWidth(.5)
-        c.line(56, 44, A4[0]-56, 44)
-        c.setFillColor(GRAY)
-        c.setFont("Body", 7.2)
-        c.drawString(56, 29, "Рэлей / Версия 1.5.0 / Пояснительная записка")
-        c.drawRightString(A4[0]-56, 29, str(doc.page))
-    c.restoreState()
 
-
-doc = SimpleDocTemplate(str(OUT), pagesize=A4, leftMargin=56, rightMargin=56,
-                        topMargin=44, bottomMargin=58)
-doc.build(story, onFirstPage=decorate, onLaterPages=decorate)
+assert table_counter==14 and figure_counter==4
+doc=GostDoc(str(OUT),pagesize=A4,leftMargin=LEFT,rightMargin=RIGHT,topMargin=TOP,bottomMargin=BOTTOM)
+frame=Frame(LEFT,BOTTOM,W,H,leftPadding=0,rightPadding=0,topPadding=0,bottomPadding=0,id="text")
+doc.addPageTemplates(PageTemplate(id="gost",frames=frame,onPage=footer))
+doc.multiBuild(story,maxPasses=10)
 print(OUT)
+print(f"Pages: {doc.observed_total}; tables: {table_counter}; figures: {figure_counter}; formulas: {formula_counter}")
