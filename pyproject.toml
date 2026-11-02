@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools>=75"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "rayleigh-fuzzy-lab"
+version = "1.5.0"
+description = "Alpha-cut arithmetic and clustering of Rayleigh-shaped fuzzy quantities"
+requires-python = ">=3.12"
+dependencies = ["numpy==2.5.4", "scipy==1.18.1", "scikit-learn==1.9.1"]
+
+[tool.setuptools]
+packages = ["fuzzy_core", "fuzzy_clustering"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]

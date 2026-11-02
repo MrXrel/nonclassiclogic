@@ -1,0 +1,1462 @@
+{
+  "schema_version": 1,
+  "config": {
+    "epsilon": 0.001,
+    "levels": 401
+  },
+  "items": [
+    {
+      "id": "R001",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 2.5001837519446224,
+        "label": "R001"
+      }
+    },
+    {
+      "id": "R002",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 0.8324870274181047,
+        "label": "R002"
+      }
+    },
+    {
+      "id": "R003",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 4.813682322617819,
+        "label": "R003"
+      }
+    },
+    {
+      "id": "R004",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 4.9601853978551365,
+        "label": "R004"
+      }
+    },
+    {
+      "id": "R005",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 5.091994998502896,
+        "label": "R005"
+      }
+    },
+    {
+      "id": "R006",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 5.0633468761830285,
+        "label": "R006"
+      }
+    },
+    {
+      "id": "R007",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 2.6826577236858795,
+        "label": "R007"
+      }
+    },
+    {
+      "id": "R008",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 2.57615625466001,
+        "label": "R008"
+      }
+    },
+    {
+      "id": "R009",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 4.963344937107095,
+        "label": "R009"
+      }
+    },
+    {
+      "id": "R010",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 4.812967247928198,
+        "label": "R010"
+      }
+    },
+    {
+      "id": "R011",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 5.1486366838202375,
+        "label": "R011"
+      }
+    },
+    {
+      "id": "R012",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 0.6768681796053275,
+        "label": "R012"
+      }
+    },
+    {
+      "id": "R013",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 2.4044173618506033,
+        "label": "R013"
+      }
+    },
+    {
+      "id": "R014",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 2.798910513955219,
+        "label": "R014"
+      }
+    },
+    {
+      "id": "R015",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 2.8589993144496155,
+        "label": "R015"
+      }
+    },
+    {
+      "id": "R016",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 1.1151587519468293,
+        "label": "R016"
+      }
+    },
+    {
+      "id": "R017",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 2.4708035412723093,
+        "label": "R017"
+      }
+    },
+    {
+      "id": "R018",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 5.059255823865063,
+        "label": "R018"
+      }
+    },
+    {
+      "id": "R019",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 5.231677773570563,
+        "label": "R019"
+      }
+    },
+    {
+      "id": "R020",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 2.4838781988765946,
+        "label": "R020"
+      }
+    },
+    {
+      "id": "R021",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 5.189907960932892,
+        "label": "R021"
+      }
+    },
+    {
+      "id": "R022",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 1.064373629133578,
+        "label": "R022"
+      }
+    },
+    {
+      "id": "R023",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 2.7412447175717363,
+        "label": "R023"
+      }
+    },
+    {
+      "id": "R024",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 2.6170875663320343,
+        "label": "R024"
+      }
+    },
+    {
+      "id": "R025",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 2.6451171862347818,
+        "label": "R025"
+      }
+    },
+    {
+      "id": "R026",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 0.6925736952405287,
+        "label": "R026"
+      }
+    },
+    {
+      "id": "R027",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 4.902355781122131,
+        "label": "R027"
+      }
+    },
+    {
+      "id": "R028",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 1.0828586144980812,
+        "label": "R028"
+      }
+    },
+    {
+      "id": "R029",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 2.519944921485065,
+        "label": "R029"
+      }
+    },
+    {
+      "id": "R030",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 5.1763853044214665,
+        "label": "R030"
+      }
+    },
+    {
+      "id": "R031",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 5.094424196612713,
+        "label": "R031"
+      }
+    },
+    {
+      "id": "R032",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 5.089382062165741,
+        "label": "R032"
+      }
+    },
+    {
+      "id": "R033",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 2.8684374186131807,
+        "label": "R033"
+      }
+    },
+    {
+      "id": "R034",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 2.6620304335394174,
+        "label": "R034"
+      }
+    },
+    {
+      "id": "R035",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 5.313968570455425,
+        "label": "R035"
+      }
+    },
+    {
+      "id": "R036",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 2.468718044121584,
+        "label": "R036"
+      }
+    },
+    {
+      "id": "R037",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 1.0018883968095063,
+        "label": "R037"
+      }
+    },
+    {
+      "id": "R038",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 2.675349465323004,
+        "label": "R038"
+      }
+    },
+    {
+      "id": "R039",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 2.734219291404767,
+        "label": "R039"
+      }
+    },
+    {
+      "id": "R040",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 4.886714513319628,
+        "label": "R040"
+      }
+    },
+    {
+      "id": "R041",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 2.797149908836137,
+        "label": "R041"
+      }
+    },
+    {
+      "id": "R042",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 5.269641136350172,
+        "label": "R042"
+      }
+    },
+    {
+      "id": "R043",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 2.491387261627901,
+        "label": "R043"
+      }
+    },
+    {
+      "id": "R044",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 5.049484441302366,
+        "label": "R044"
+      }
+    },
+    {
+      "id": "R045",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 5.381505826408635,
+        "label": "R045"
+      }
+    },
+    {
+      "id": "R046",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 0.6382903536625052,
+        "label": "R046"
+      }
+    },
+    {
+      "id": "R047",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 1.067030098244257,
+        "label": "R047"
+      }
+    },
+    {
+      "id": "R048",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 2.580907253488726,
+        "label": "R048"
+      }
+    },
+    {
+      "id": "R049",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 0.8800326022362205,
+        "label": "R049"
+      }
+    },
+    {
+      "id": "R050",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 5.152586743306627,
+        "label": "R050"
+      }
+    },
+    {
+      "id": "R051",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 2.778169555871333,
+        "label": "R051"
+      }
+    },
+    {
+      "id": "R052",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 1.156058993309161,
+        "label": "R052"
+      }
+    },
+    {
+      "id": "R053",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 0.8660485192963987,
+        "label": "R053"
+      }
+    },
+    {
+      "id": "R054",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 0.6565064087325897,
+        "label": "R054"
+      }
+    },
+    {
+      "id": "R055",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 5.150458781347641,
+        "label": "R055"
+      }
+    },
+    {
+      "id": "R056",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 2.7808309920003547,
+        "label": "R056"
+      }
+    },
+    {
+      "id": "R057",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 2.83341561035787,
+        "label": "R057"
+      }
+    },
+    {
+      "id": "R058",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 5.355072071026079,
+        "label": "R058"
+      }
+    },
+    {
+      "id": "R059",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 1.1853734109820535,
+        "label": "R059"
+      }
+    },
+    {
+      "id": "R060",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 0.9789986394732388,
+        "label": "R060"
+      }
+    },
+    {
+      "id": "R061",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 0.8817334867654847,
+        "label": "R061"
+      }
+    },
+    {
+      "id": "R062",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 4.862041780633531,
+        "label": "R062"
+      }
+    },
+    {
+      "id": "R063",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 5.36269587298499,
+        "label": "R063"
+      }
+    },
+    {
+      "id": "R064",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 2.6771263381508326,
+        "label": "R064"
+      }
+    },
+    {
+      "id": "R065",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 4.983573974490391,
+        "label": "R065"
+      }
+    },
+    {
+      "id": "R066",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 2.801041777074283,
+        "label": "R066"
+      }
+    },
+    {
+      "id": "R067",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 1.0184208174356184,
+        "label": "R067"
+      }
+    },
+    {
+      "id": "R068",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 2.872154626501283,
+        "label": "R068"
+      }
+    },
+    {
+      "id": "R069",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 0.9327508722095008,
+        "label": "R069"
+      }
+    },
+    {
+      "id": "R070",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 2.7321476403947975,
+        "label": "R070"
+      }
+    },
+    {
+      "id": "R071",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 2.870338925463848,
+        "label": "R071"
+      }
+    },
+    {
+      "id": "R072",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 4.906063669763539,
+        "label": "R072"
+      }
+    },
+    {
+      "id": "R073",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 5.069616901286273,
+        "label": "R073"
+      }
+    },
+    {
+      "id": "R074",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 0.8222758236209213,
+        "label": "R074"
+      }
+    },
+    {
+      "id": "R075",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 0.7729968623581465,
+        "label": "R075"
+      }
+    },
+    {
+      "id": "R076",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 2.7985881241964323,
+        "label": "R076"
+      }
+    },
+    {
+      "id": "R077",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 2.9120418439608997,
+        "label": "R077"
+      }
+    },
+    {
+      "id": "R078",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 1.0965787031955492,
+        "label": "R078"
+      }
+    },
+    {
+      "id": "R079",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 2.4525899515896605,
+        "label": "R079"
+      }
+    },
+    {
+      "id": "R080",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 0.6262822594723373,
+        "label": "R080"
+      }
+    },
+    {
+      "id": "R081",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 5.143036831425645,
+        "label": "R081"
+      }
+    },
+    {
+      "id": "R082",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 0.8224788145395487,
+        "label": "R082"
+      }
+    },
+    {
+      "id": "R083",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 0.677952903201283,
+        "label": "R083"
+      }
+    },
+    {
+      "id": "R084",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 5.255111717901126,
+        "label": "R084"
+      }
+    },
+    {
+      "id": "R085",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 2.4349816450134396,
+        "label": "R085"
+      }
+    },
+    {
+      "id": "R086",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 1.0993558808371207,
+        "label": "R086"
+      }
+    },
+    {
+      "id": "R087",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 2.643832116864042,
+        "label": "R087"
+      }
+    },
+    {
+      "id": "R088",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 5.008121882720903,
+        "label": "R088"
+      }
+    },
+    {
+      "id": "R089",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 4.921418018877138,
+        "label": "R089"
+      }
+    },
+    {
+      "id": "R090",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 0.7363432330708661,
+        "label": "R090"
+      }
+    },
+    {
+      "id": "R091",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 5.345148414424565,
+        "label": "R091"
+      }
+    },
+    {
+      "id": "R092",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 0.7954952148828911,
+        "label": "R092"
+      }
+    },
+    {
+      "id": "R093",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 0.7361456094305304,
+        "label": "R093"
+      }
+    },
+    {
+      "id": "R094",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 1.1824188146369419,
+        "label": "R094"
+      }
+    },
+    {
+      "id": "R095",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 4.8578345772921,
+        "label": "R095"
+      }
+    },
+    {
+      "id": "R096",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 2.888412230799621,
+        "label": "R096"
+      }
+    },
+    {
+      "id": "R097",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 2.700626865062018,
+        "label": "R097"
+      }
+    },
+    {
+      "id": "R098",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 0.812715580877921,
+        "label": "R098"
+      }
+    },
+    {
+      "id": "R099",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 1.0548526440512243,
+        "label": "R099"
+      }
+    },
+    {
+      "id": "R100",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 2.4184907007407634,
+        "label": "R100"
+      }
+    },
+    {
+      "id": "R101",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 1.0201590612013494,
+        "label": "R101"
+      }
+    },
+    {
+      "id": "R102",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 1.0098293719454727,
+        "label": "R102"
+      }
+    },
+    {
+      "id": "R103",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 1.0566838211942118,
+        "label": "R103"
+      }
+    },
+    {
+      "id": "R104",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 5.073465773900167,
+        "label": "R104"
+      }
+    },
+    {
+      "id": "R105",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 0.9863190720483986,
+        "label": "R105"
+      }
+    },
+    {
+      "id": "R106",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 2.5823700588375673,
+        "label": "R106"
+      }
+    },
+    {
+      "id": "R107",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 2.4136272438803164,
+        "label": "R107"
+      }
+    },
+    {
+      "id": "R108",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 2.454028716465385,
+        "label": "R108"
+      }
+    },
+    {
+      "id": "R109",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 5.21982428028645,
+        "label": "R109"
+      }
+    },
+    {
+      "id": "R110",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 2.5403636915192043,
+        "label": "R110"
+      }
+    },
+    {
+      "id": "R111",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 0.6838514901655859,
+        "label": "R111"
+      }
+    },
+    {
+      "id": "R112",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 4.998941398405531,
+        "label": "R112"
+      }
+    },
+    {
+      "id": "R113",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 1.0468572935446903,
+        "label": "R113"
+      }
+    },
+    {
+      "id": "R114",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 1.0716385831661723,
+        "label": "R114"
+      }
+    },
+    {
+      "id": "R115",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 4.824968504317136,
+        "label": "R115"
+      }
+    },
+    {
+      "id": "R116",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 5.147531741365138,
+        "label": "R116"
+      }
+    },
+    {
+      "id": "R117",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 0.8702315627373403,
+        "label": "R117"
+      }
+    },
+    {
+      "id": "R118",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 0.7167832247111805,
+        "label": "R118"
+      }
+    },
+    {
+      "id": "R119",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 2.6676937653444184,
+        "label": "R119"
+      }
+    },
+    {
+      "id": "R120",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 1.0094973023849854,
+        "label": "R120"
+      }
+    },
+    {
+      "id": "R121",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 4.9595219768757115,
+        "label": "R121"
+      }
+    },
+    {
+      "id": "R122",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 5.1545492948888505,
+        "label": "R122"
+      }
+    },
+    {
+      "id": "R123",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 5.096394491546712,
+        "label": "R123"
+      }
+    },
+    {
+      "id": "R124",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 1.0996069176347025,
+        "label": "R124"
+      }
+    },
+    {
+      "id": "R125",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 2.496763067420161,
+        "label": "R125"
+      }
+    },
+    {
+      "id": "R126",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 5.230134113495398,
+        "label": "R126"
+      }
+    },
+    {
+      "id": "R127",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 5.375135527944868,
+        "label": "R127"
+      }
+    },
+    {
+      "id": "R128",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 0.8622911513233984,
+        "label": "R128"
+      }
+    },
+    {
+      "id": "R129",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 2.9771385987297085,
+        "label": "R129"
+      }
+    },
+    {
+      "id": "R130",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 0.7136828154505714,
+        "label": "R130"
+      }
+    },
+    {
+      "id": "R131",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 5.112403441482923,
+        "label": "R131"
+      }
+    },
+    {
+      "id": "R132",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 5.267250542379477,
+        "label": "R132"
+      }
+    },
+    {
+      "id": "R133",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 2.568830335213198,
+        "label": "R133"
+      }
+    },
+    {
+      "id": "R134",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 4.850666592683933,
+        "label": "R134"
+      }
+    },
+    {
+      "id": "R135",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 5.084093640634173,
+        "label": "R135"
+      }
+    },
+    {
+      "id": "R136",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 4.849637999953463,
+        "label": "R136"
+      }
+    },
+    {
+      "id": "R137",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 5.3415614379263054,
+        "label": "R137"
+      }
+    },
+    {
+      "id": "R138",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 4.997916727399671,
+        "label": "R138"
+      }
+    },
+    {
+      "id": "R139",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 1.180505839460526,
+        "label": "R139"
+      }
+    },
+    {
+      "id": "R140",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 2.5287508036917172,
+        "label": "R140"
+      }
+    },
+    {
+      "id": "R141",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 0.8854229557355602,
+        "label": "R141"
+      }
+    },
+    {
+      "id": "R142",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 2.823099227175801,
+        "label": "R142"
+      }
+    },
+    {
+      "id": "R143",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 0.8633270638512314,
+        "label": "R143"
+      }
+    },
+    {
+      "id": "R144",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 2.7391416638887134,
+        "label": "R144"
+      }
+    },
+    {
+      "id": "R145",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 2.8177922250466416,
+        "label": "R145"
+      }
+    },
+    {
+      "id": "R146",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 1.093656967962498,
+        "label": "R146"
+      }
+    },
+    {
+      "id": "R147",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 2.735524296447248,
+        "label": "R147"
+      }
+    },
+    {
+      "id": "R148",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 2.628612735657889,
+        "label": "R148"
+      }
+    },
+    {
+      "id": "R149",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 0.7874199848292246,
+        "label": "R149"
+      }
+    },
+    {
+      "id": "R150",
+      "value": {
+        "type": "rayleigh",
+        "sigma": 1.1358726727933186,
+        "label": "R150"
+      }
+    }
+  ],
+  "results": [],
+  "clustering": {
+    "method": "complete",
+    "mode": "auto",
+    "k": 3,
+    "threshold": null,
+    "labels": [
+      2,
+      1,
+      3,
+      3,
+      3,
+      3,
+      2,
+      2,
+      3,
+      3,
+      3,
+      1,
+      2,
+      2,
+      2,
+      1,
+      2,
+      3,
+      3,
+      2,
+      3,
+      1,
+      2,
+      2,
+      2,
+      1,
+      3,
+      1,
+      2,
+      3,
+      3,
+      3,
+      2,
+      2,
+      3,
+      2,
+      1,
+      2,
+      2,
+      3,
+      2,
+      3,
+      2,
+      3,
+      3,
+      1,
+      1,
+      2,
+      1,
+      3,
+      2,
+      1,
+      1,
+      1,
+      3,
+      2,
+      2,
+      3,
+      1,
+      1,
+      1,
+      3,
+      3,
+      2,
+      3,
+      2,
+      1,
+      2,
+      1,
+      2,
+      2,
+      3,
+      3,
+      1,
+      1,
+      2,
+      2,
+      1,
+      2,
+      1,
+      3,
+      1,
+      1,
+      3,
+      2,
+      1,
+      2,
+      3,
+      3,
+      1,
+      3,
+      1,
+      1,
+      1,
+      3,
+      2,
+      2,
+      1,
+      1,
+      2,
+      1,
+      1,
+      1,
+      3,
+      1,
+      2,
+      2,
+      2,
+      3,
+      2,
+      1,
+      3,
+      1,
+      1,
+      3,
+      3,
+      1,
+      1,
+      2,
+      1,
+      3,
+      3,
+      3,
+      1,
+      2,
+      3,
+      3,
+      1,
+      2,
+      1,
+      3,
+      3,
+      2,
+      3,
+      3,
+      3,
+      3,
+      3,
+      1,
+      2,
+      1,
+      2,
+      1,
+      2,
+      2,
+      1,
+      2,
+      2,
+      1,
+      1
+    ],
+    "auto": {
+      "criterion": "gap",
+      "rule": "global_1se",
+      "max_clusters": 10,
+      "reference_samples": 100,
+      "seed": 42,
+      "reference": "uniform_sigma_range",
+      "candidates": [
+        {
+          "k": 1,
+          "gap": -0.4643888659034534,
+          "se": 0.07169007867175776,
+          "log_w": 2.9731279183753405,
+          "reference_log_w": 2.508739052471887,
+          "eligible": true
+        },
+        {
+          "k": 2,
+          "gap": -0.027259004723453995,
+          "se": 0.1597372473284984,
+          "log_w": 1.2607449132410382,
+          "reference_log_w": 1.2334859085175842,
+          "eligible": true
+        },
+        {
+          "k": 3,
+          "gap": 2.20153118545193,
+          "se": 0.12582498166700207,
+          "log_w": -1.7494462758966016,
+          "reference_log_w": 0.4520849095553283,
+          "eligible": true
+        },
+        {
+          "k": 4,
+          "gap": 1.815082429462531,
+          "se": 0.11261503437875194,
+          "log_w": -1.963294035323708,
+          "reference_log_w": -0.14821160586117701,
+          "eligible": true
+        },
+        {
+          "k": 5,
+          "gap": 1.690317499638176,
+          "se": 0.11618969388597572,
+          "log_w": -2.303788892787834,
+          "reference_log_w": -0.6134713931496578,
+          "eligible": true
+        },
+        {
+          "k": 6,
+          "gap": 1.981235844161053,
+          "se": 0.12140167647856998,
+          "log_w": -2.97214101837512,
+          "reference_log_w": -0.9909051742140668,
+          "eligible": true
+        },
+        {
+          "k": 7,
+          "gap": 1.9433281601135142,
+          "se": 0.10915463948425488,
+          "log_w": -3.280514992417333,
+          "reference_log_w": -1.3371868323038187,
+          "eligible": true
+        },
+        {
+          "k": 8,
+          "gap": 1.8660835264137858,
+          "se": 0.11064240701191169,
+          "log_w": -3.489589441866148,
+          "reference_log_w": -1.6235059154523623,
+          "eligible": true
+        },
+        {
+          "k": 9,
+          "gap": 1.9932194897797615,
+          "se": 0.11123311285364565,
+          "log_w": -3.872980617556291,
+          "reference_log_w": -1.8797611277765296,
+          "eligible": true
+        },
+        {
+          "k": 10,
+          "gap": 2.045503415997798,
+          "se": 0.10113931665088849,
+          "log_w": -4.15808141716226,
+          "reference_log_w": -2.1125780011644624,
+          "eligible": true
+        }
+      ],
+      "reason": "gap_rule",
+      "best_k": 3,
+      "cutoff": 2.075706203784928
+    }
+  },
+  "controls": {}
+}

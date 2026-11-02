@@ -1,0 +1,20 @@
+<section class="model" aria-label="Модель нечёткой величины Рэлея">
+  <div class="controls">
+    <div class="step">Параметры</div>
+    <label for="sigma">Масштаб σ</label>
+    <input id="sigma" name="sigma" type="number" min="0.000001" max="1000000" step="any" required>
+    <label for="alpha">Уровень принадлежности α <output id="alpha-value" for="alpha"></output></label>
+    <input id="alpha" name="alpha" type="range" max="1" step="0.001">
+    <div class="range-ends"><span id="alpha-min"></span><span>1</span></div>
+    <button type="button" id="add">Добавить в набор</button>
+  </div>
+  <div class="visual">
+    <div class="legend"><span class="curve-swatch"></span>Функция принадлежности <span class="cut-swatch"></span>α-срез</div>
+    <div class="plot"><svg role="img" aria-label="Кривая Рэлея и текущий α-срез"></svg><div class="tooltip" hidden></div></div>
+    <div class="metrics" aria-live="off">
+      <div><span>Левая граница</span><output id="lower"></output></div>
+      <div><span>Правая граница</span><output id="upper"></output></div>
+      <div><span>Ширина среза</span><output id="width"></output></div>
+    </div>
+  </div>
+</section>

@@ -1,0 +1,9 @@
+*.pdf binary
+*.png binary
+*.ttf binary
+*.py text eol=lf
+*.mjs text eol=lf
+*.command text eol=lf
+*.csv text eol=lf
+*.bat text eol=crlf
+docs/fonts/LICENSE-DejaVu.txt -whitespace
