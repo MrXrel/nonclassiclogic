@@ -164,9 +164,7 @@ def test_hdbscan_comparison_ui_controls_noise_and_restore():
     assert not at.exception and at.session_state.cluster.k == 6
     assert at.session_state.density_cluster.k == 3
     assert sum(at.session_state.density_cluster.labels == 0) == 8
-    at.radio(key="view_method").set_value("HDBSCAN").run()
-    at.selectbox(key="cluster_view").set_value(0).run()
-    assert not at.exception
+    assert at.session_state.density_profile.to_dict()["scores"].count(None) == 8
     at.number_input(key="hb_min_cluster_size").set_value(300)
     at.button(key="run_clustering").click().run()
     assert not at.exception and at.session_state.density_cluster.k == 0
@@ -211,3 +209,25 @@ def test_utility_layout_keeps_operation_sources_and_pending_settings_between_pag
     assert at.number_input(key="hb_min_samples").value == 12
     at.button(key="run_clustering").click().run()
     assert not at.exception and at.session_state.cluster.k == 4
+
+
+
+def test_cluster_filter_import_navigation_and_recalculation():
+    from fuzzy_clustering import cluster_auto, cluster_hdbscan, membership_mask
+
+    at = app()
+    items = generate()
+    primary, density = cluster_auto(items), cluster_hdbscan(items)
+    at.session_state.pending_session = SessionData(
+        items, clustering=primary.to_dict(), comparison=density.to_dict(),
+        controls={"cluster_alpha": .43})
+    at.radio(key="section").set_value("Кластеры").run()
+    assert not at.exception and at.session_state.cluster_alpha == .43
+    for key in ("cluster_profile", "density_profile"):
+        assert membership_mask(at.session_state[key], .43).sum() == 113
+    at.radio(key="section").set_value("Модель").run()
+    assert at.session_state.alpha == .5
+    at.radio(key="section").set_value("Кластеры").run()
+    assert at.session_state.cluster_alpha == .43
+    at.button(key="run_clustering").click().run()
+    assert not at.exception and at.session_state.cluster_alpha == 0

@@ -5,11 +5,13 @@ import pandas as pd
 import streamlit as st
 from fuzzy_core import (ComputationConfig, RayleighFuzzy, FuzzyItem, arithmetic, compare,
                         generate_scenario, SCENARIOS, SessionData, dumps_session, loads_session, dataset_csv)
-from fuzzy_clustering import cluster_by_count, cluster_by_threshold, cluster_auto, cluster_hdbscan, adjusted_rand_index
+from fuzzy_clustering import (cluster_by_count, cluster_by_threshold, cluster_auto, cluster_hdbscan,
+                              adjusted_rand_index, cluster_membership)
 from live_model_component import live_model
+from live_clusters_component import live_clusters
 from lab_support import (TEAL, PALETTE,
                          operation_figure, cluster_strip, tree_figure, base_figure, curve_trace, generation_figure,
-                         comparison_figure, cluster_name, cluster_color)
+                         cluster_name)
 
 from ui_style import install_style, workspace, values_table
 
@@ -17,11 +19,31 @@ st.set_page_config(page_title="Рэлей", page_icon="∿", layout="wide", init
 install_style()
 
 DEFAULTS = dict(model_sigma=2.0, alpha=0.5, op_a_sigma=1.0, op_b_sigma=2.0,
-                samples=150, seed=42, k=3, threshold=1.0)
+                samples=150, seed=42, k=3, threshold=1.0, cluster_alpha=0.)
 GEN_DEFAULTS = dict(generator_scenario="demo", gen_groups=4, gen_separation=7.0,
                     gen_imbalance=50, gen_outliers=0, gen_sigma_min=.5, gen_sigma_max=6.0)
 DENSITY_DEFAULTS = dict(compare_hdbscan=True, hb_min_cluster_size=10, hb_min_samples=10,
                         hb_allow_single=True)
+
+
+def set_analysis(primary=None, density=None):
+    """Install a partition and its fixed profiles together."""
+    state = st.session_state
+    profile = cluster_membership(state["items"], primary, state.cfg) if primary is not None else None
+    density_profile = cluster_membership(state["items"], density, state.cfg) if density is not None else None
+    state.update(cluster=primary, density_cluster=density, cluster_profile=profile,
+                 density_profile=density_profile, cluster_alpha=0.,
+                 cluster_revision=state.get("cluster_revision", 0) + 1)
+
+
+def cluster_alpha_changed():
+    state = st.session_state
+    payload = state["live_clusters"].get("threshold")
+    if not isinstance(payload, dict) or payload.get("revision") != state.cluster_revision:
+        return
+    alpha = payload.get("alpha")
+    if type(alpha) in (int, float) and 0 <= alpha <= 1:
+        state.cluster_alpha = float(alpha)
 
 
 def apply_model_controls(payload):
@@ -56,8 +78,7 @@ def model_add_requested():
         j += 1
     name = f"R{j:03d}"
     items.append(FuzzyItem(name, RayleighFuzzy(st.session_state.model_sigma, name)))
-    st.session_state.cluster = None
-    st.session_state.density_cluster = None
+    set_analysis()
     st.session_state.generation = None
     st.session_state.notice = f"Величина {name} добавлена в набор."
 
@@ -98,6 +119,8 @@ def restore_controls(controls, cfg, n):
         output[key] = float(output[key])
     if not cfg.epsilon <= output["alpha"] <= 1:
         raise ValueError("Выбранный α ниже порога сессии или выше 1.")
+    if not 0 <= output["cluster_alpha"] <= 1:
+        raise ValueError("Порог соответствия α должен быть числом от 0 до 1.")
     for key, low, high in [("samples", 100, 300), ("seed", 0, 2**32 - 1), ("k", 1, n)]:
         if int(output[key]) != output[key] or not low <= output[key] <= high:
             raise ValueError(f"Недопустимая настройка {key}.")
@@ -136,8 +159,7 @@ if "items" not in st.session_state:
     st.session_state.generation = initial.provenance
     st.session_state.results = []
     st.session_state.cfg = ComputationConfig()
-    st.session_state.cluster = None
-    st.session_state.density_cluster = None
+    set_analysis()
     st.session_state.update({**DEFAULTS, **GEN_DEFAULTS, **DENSITY_DEFAULTS})
 
 if "pending_session" in st.session_state:
@@ -157,17 +179,21 @@ if "pending_session" in st.session_state:
     st.session_state.results = loaded.results
     st.session_state.cfg = loaded.config
     st.session_state.generation = loaded.generation
-    st.session_state.cluster = result
     d = loaded.comparison
-    st.session_state.density_cluster = (cluster_hdbscan(loaded.items, loaded.config,
+    density = (cluster_hdbscan(loaded.items, loaded.config,
         **{key: d["density"][key] for key in ("min_cluster_size", "min_samples", "allow_single_cluster")}) if d else None)
+    set_analysis(result, density)
     st.session_state.update(controls)
-    for key in ["source_a", "source_b", "dataset_editor", "cluster_mode", "cluster_view", "view_method"]:
+    for key in ["source_a", "source_b", "dataset_editor", "cluster_mode"]:
         st.session_state.pop(key, None)
     if loaded.clustering:
         st.session_state.cluster_mode = {"auto": "Авто", "count": "Ровно K кластеров",
                                          "threshold": "По порогу T"}[loaded.clustering["mode"]]
     st.session_state.notice = "Сессия восстановлена. Набор, результаты и настройки загружены."
+
+# Sessions already open during a source reload need a profile for their partition.
+if "cluster_profile" not in st.session_state:
+    set_analysis(st.session_state.cluster, st.session_state.get("density_cluster"))
 
 # Detach shared controls from Streamlit's per-page widget cleanup.
 for control_key, default in {**DEFAULTS, **GEN_DEFAULTS, **DENSITY_DEFAULTS}.items():
@@ -183,14 +209,16 @@ if st.session_state.get("section") not in sections:
 def snapshot():
     controls = {key: st.session_state.get(key, val) for key, val in {**DEFAULTS, **GEN_DEFAULTS, **DENSITY_DEFAULTS}.items()}
     controls["k"] = min(int(controls["k"]), len(st.session_state["items"]))
-    c = st.session_state.cluster
+    def exported(result, profile):
+        return {**result.to_dict(), "membership": profile.to_dict()} if result is not None else None
     return SessionData(st.session_state["items"], st.session_state.results, cfg,
-                       c.to_dict() if c else None, controls, st.session_state.get("generation"),
-                       st.session_state.density_cluster.to_dict() if st.session_state.get("density_cluster") else None)
+                       exported(st.session_state.cluster, st.session_state.cluster_profile),
+                       controls, st.session_state.get("generation"),
+                       exported(st.session_state.density_cluster, st.session_state.density_profile))
 
 
 # This section is assembled into app.py; computational helpers above it are unchanged.
-for key in ("source_a", "source_b", "operation", "full_tails", "cluster_mode", "view_method", "cluster_view"):
+for key in ("source_a", "source_b", "operation", "full_tails", "cluster_mode"):
     if key in st.session_state:
         st.session_state[key] = st.session_state[key]
 
@@ -222,8 +250,11 @@ def dataset_caption():
 
 
 def csv_download(label="Скачать CSV", key="dataset_download"):
-    c, d = st.session_state.cluster, st.session_state.get("density_cluster")
-    st.download_button(label, "\ufeff" + dataset_csv(items, c.labels if c else None, d.labels if d else None),
+    c, d = st.session_state.cluster_profile, st.session_state.density_profile
+    st.download_button(label, "\ufeff" + dataset_csv(items, c.labels if c else None, d.labels if d else None,
+                       scores=c.to_dict()["scores"] if c else None,
+                       hdbscan_scores=d.to_dict()["scores"] if d else None,
+                       cluster_alpha=st.session_state.cluster_alpha),
                        "rayleigh-clusters.csv", "text/csv", width="stretch", key=key)
 
 
@@ -272,33 +303,12 @@ def show_gap(result):
 
 
 def cluster_inspection(result, density, provenance):
-    view_method = (st.radio("Метод для просмотра состава и кривых", ["Полная связь", "HDBSCAN"],
-                   horizontal=True, key="view_method") if density is not None else "Полная связь")
-    viewed = density if view_method == "HDBSCAN" else result
-    groups = sorted(set(int(v) for v in viewed.labels))
-    tree_tab, curves_tab, composition_tab = st.tabs(["Дерево полной связи", "Кривые", "Состав и расстояния"])
+    tree_tab, distances_tab = st.tabs(["Дерево полной связи", "Матрица расстояний"])
     with tree_tab:
         chart(tree_figure(result), "cluster_tree")
-        st.caption("Дерево полной связи, до 25 конечных ветвей. Числа в скобках — размеры свёрнутых ветвей.")
-    with curves_tab:
-        if st.session_state.get("cluster_view") not in groups:
-            st.session_state.cluster_view = groups[0]
-        selected = st.selectbox("Кластер или шум", groups, key="cluster_view", format_func=cluster_name)
-        chosen = [i for i, lab in zip(items, viewed.labels) if lab == selected]
-        fig = base_figure(height=360)
-        for item in chosen[:50]:
-            trace = curve_trace(item.value, cfg, item.id, cluster_color(selected))
-            trace.line.width, trace.opacity, trace.showlegend = 1.3, .4, False
-            fig.add_trace(trace)
-        chart(fig, "cluster_curves")
-        st.caption(f"{view_method} · {cluster_name(selected)} · {len(chosen)} величин. Показано до 50 кривых.")
-    with composition_tab:
-        rows = []
-        for group in groups:
-            sigmas = [i.value.sigma for i, lab in zip(items, viewed.labels) if lab == group]
-            rows.append({"Группа": cluster_name(group), "Размер": len(sigmas), "σ min": min(sigmas),
-                         "σ среднее": float(np.mean(sigmas)), "σ max": max(sigmas)})
-        st.dataframe(pd.DataFrame(rows), hide_index=True, width="stretch")
+        st.caption("Дерево исходного разбиения. Числа в скобках — размеры свёрнутых ветвей.")
+    with distances_tab:
+        st.caption("Расстояния по полному набору до отсечения.")
         heat = base_figure(height=370, x_title="Индекс объекта", y_title="Индекс объекта")
         heat.add_trace(__import__("plotly.graph_objects", fromlist=["Heatmap"]).Heatmap(z=result.distances,
             colorscale=[[0, "#F5F6F6"], [1, TEAL]], colorbar=dict(title="d")))
@@ -309,7 +319,7 @@ def cluster_inspection(result, density, provenance):
             origins = np.array([provenance["origin_labels"][item.id] for item in items])
             clean = origins > 0
             values_table([{"Источников": len(provenance["components"]), "Групп полной связи": result.k or len(set(result.labels)),
-                           "ARI": f"{adjusted_rand_index(origins[clean], result.labels[clean]):.3f}"}])
+                           "ARI исходного разбиения": f"{adjusted_rand_index(origins[clean], result.labels[clean]):.3f}"}])
             chart(generation_figure(items, provenance, result.labels), "generation_vs_clusters")
             st.caption("Метки генератора не передаются алгоритмам. ARI = 1 означает одинаковое разбиение, "
                        "около 0 — согласие на уровне случайного. Заданные выбросы исключены из ARI.")
@@ -430,7 +440,7 @@ elif page == "Набор величин":
                     sigma_max=st.session_state.gen_sigma_max if scenario == "uniform" else 6.)
                 st.session_state["items"] = batch.items
                 st.session_state.generation = batch.provenance
-                st.session_state.cluster = st.session_state.density_cluster = None
+                set_analysis()
                 st.session_state.k = min(st.session_state.k, len(batch.items))
                 st.session_state.pop("dataset_editor", None)
                 st.session_state.notice = f"Создан набор из {n} величин."
@@ -467,7 +477,7 @@ elif page == "Набор величин":
                 changes = sum(x.value.sigma != y.value.sigma for x, y in zip(items, updated))
                 if changes:
                     st.session_state["items"] = updated
-                    st.session_state.cluster = st.session_state.density_cluster = None
+                    set_analysis()
                     st.session_state.generation = None
                     st.session_state.notice = f"Обновлено величин: {changes}. Выполните кластеризацию заново."
                     st.rerun()
@@ -507,7 +517,7 @@ elif page == "Кластеры":
                     primary = cached_cluster(sigmas, cfg.epsilon, cfg.levels, mode, param)
                     density = (cached_density(sigmas, cfg.epsilon, cfg.levels, st.session_state.hb_min_cluster_size,
                         st.session_state.hb_min_samples, st.session_state.hb_allow_single) if compare_density else None)
-                st.session_state.cluster, st.session_state.density_cluster = primary, density
+                set_analysis(primary, density)
                 st.rerun()
             except ValueError as error:
                 st.error(str(error))
@@ -536,7 +546,7 @@ elif page == "Кластеры":
                        "В группах, %": f"{100 * (len(items) - noise) / len(items):.1f}"}
                 if origins is not None:
                     clean = origins > 0
-                    row["ARI"] = (f"{adjusted_rand_index(origins[clean], r.labels[clean]):.3f}"
+                    row["ARI исходного разбиения"] = (f"{adjusted_rand_index(origins[clean], r.labels[clean]):.3f}"
                                   if np.any(r.labels[clean] > 0) else "—")
                 rows.append(row)
             values_table(rows)
@@ -547,11 +557,8 @@ elif page == "Кластеры":
                 d = density.density
                 used = f" · HDBSCAN: размер {d['min_cluster_size']}, соседей {d['min_samples']}, одна группа {'да' if d['allow_single_cluster'] else 'нет'}"
             st.caption(f"Выполненный анализ: {actual}{used}. Новые настройки применяются по кнопке.")
-            if density is not None:
-                chart(comparison_figure(items, result, density), "method_comparison")
-                st.caption("Серые крестики — шум HDBSCAN. По горизонтали σ, по вертикали категории групп.")
-                if density.k == 0:
-                    st.info("HDBSCAN оставил весь набор шумом. Устойчивых групп при этих настройках не найдено.")
-            else:
-                chart(cluster_strip(items, result.labels), "cluster_strip")
+            live_clusters(items, cfg, st.session_state.cluster_profile, st.session_state.density_profile,
+                          st.session_state.cluster_alpha, st.session_state.cluster_revision, cluster_alpha_changed)
+            if density is not None and density.k == 0:
+                st.info("HDBSCAN оставил весь набор шумом. Устойчивых групп при этих настройках не найдено.")
             cluster_inspection(result, density, provenance)

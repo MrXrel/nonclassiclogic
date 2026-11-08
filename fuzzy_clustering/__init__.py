@@ -6,6 +6,7 @@ from scipy.cluster.hierarchy import linkage, cut_tree, fcluster
 from scipy.spatial.distance import pdist, squareform
 from fuzzy_core import ComputationConfig, FuzzyItem, RayleighFuzzy, rank
 from ._auto import select_cluster_count
+from ._membership import ClusterMembership, cluster_membership, membership_mask, _cut_features
 from .validation import adjusted_rand_index
 
 
@@ -54,15 +55,7 @@ def cluster_hdbscan(items, config=ComputationConfig(), *, min_cluster_size=10,
 
 def distance_matrix(items, config=ComputationConfig()):
     """Trapezoid-weighted Euclidean embedding of both alpha endpoints."""
-    if not items:
-        raise ValueError("Набор для кластеризации пуст.")
-    values = [i.value if isinstance(i, FuzzyItem) else i for i in items]
-    cuts = [v.to_alpha_cuts(config) for v in values]
-    grid = cuts[0].alpha
-    dx = np.diff(grid)
-    weights = np.r_[dx[0] / 2, (dx[:-1] + dx[1:]) / 2, dx[-1] / 2]
-    weights = np.sqrt(weights / (2 * (1 - config.epsilon)))
-    features = np.array([np.r_[c.left * weights, c.right * weights] for c in cuts])
+    features, _, values = _cut_features(items, config)
     return squareform(pdist(features)), values
 
 

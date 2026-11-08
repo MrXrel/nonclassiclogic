@@ -1,0 +1,33 @@
+<section class="cluster-filter" aria-label="Отбор внутри кластеров">
+  <div class="filter-control">
+    <label for="cluster-threshold">Порог соответствия кластеру α</label>
+    <div class="filter-inputs">
+      <input id="cluster-threshold" type="range" min="0" max="1" step="0.001" aria-describedby="filter-help">
+      <input id="cluster-threshold-text" type="text" inputmode="decimal" autocomplete="off"
+        aria-label="Ввести порог α" aria-describedby="filter-help filter-error">
+    </div>
+    <p id="filter-error" class="filter-error" role="alert" hidden>Введите число от 0 до 1.</p>
+    <p id="filter-help">Остаются величины с оценкой не ниже α. Центры групп фиксированы. Этот порог задаётся отдельно от α-среза величины.</p>
+  </div>
+  <div class="filter-legend">
+    <span><i class="kept-symbol"></i> Прошли порог</span>
+    <span><i class="cut-symbol"></i> Ниже порога</span>
+    <span class="noise-legend"><i class="noise-symbol">×</i> Шум HDBSCAN</span>
+  </div>
+  <div class="filter-methods"></div>
+  <details class="filter-inspect">
+    <summary>Состав и кривые</summary>
+    <div class="filter-selects">
+      <label class="method-select">Метод <select id="cluster-filter-method"></select></label>
+      <label>Группа <select id="cluster-filter-group"></select></label>
+    </div>
+    <div class="filter-table">
+      <table>
+        <thead><tr><th>Группа</th><th>Исходно</th><th>Осталось</th><th>Отсеяно</th><th>Центр σ</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <p class="filter-curve-summary"></p>
+    <svg class="filter-curves" role="img" aria-label="Кривые выбранной группы"></svg>
+  </details>
+</section>

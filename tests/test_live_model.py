@@ -18,3 +18,10 @@ def test_frontend_roots_and_updates_before_release():
             references.append(dict(sigma=sigma, alpha=alpha, left=left, right=right))
     test = Path(__file__).with_suffix(".mjs")
     subprocess.run([node, str(test)], input=json.dumps(references), text=True, check=True)
+
+
+def test_cluster_threshold_preview_and_commit():
+    node = os.environ.get("RAYLEIGH_NODE") or shutil.which("node")
+    if not node:
+        pytest.skip("Node.js is only needed to run the frontend unit test.")
+    subprocess.run([node, str(Path(__file__).with_name("test_live_clusters.mjs"))], check=True)

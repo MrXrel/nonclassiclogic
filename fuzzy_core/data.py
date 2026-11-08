@@ -60,6 +60,27 @@ class SessionData:
     comparison: dict | None = None
 
 
+def _valid_unit(value):
+    return not isinstance(value, bool) and isinstance(value, (int, float)) and 0 <= value <= 1
+
+
+def _validate_scores(labels, scores):
+    if (labels is None or len(scores) != len(labels)
+            or any((u is not None if label == 0 else not _valid_unit(u))
+                   for label, u in zip(labels, scores))):
+        raise ValueError("Оценки соответствия не совпадают с исходными метками кластеров.")
+
+
+def _validate_membership(result, labels):
+    if "membership" not in result:
+        return
+    block = result["membership"]
+    if (not isinstance(block, dict) or block.get("rule") != "gaussian_rms_v1"
+            or not isinstance(block.get("scores"), list)):
+        raise ValueError("Неверный формат оценок соответствия кластерам.")
+    _validate_scores(labels, block["scores"])
+
+
 def validate_session(session: SessionData):
     if not 1 <= len(session.items) <= 300 or len(session.results) > 100:
         raise ValueError("Сессия должна содержать 1–300 исходных величин и до 100 результатов.")
@@ -72,6 +93,8 @@ def validate_session(session: SessionData):
         result.value.to_alpha_cuts(session.config)
     if not isinstance(session.controls, dict):
         raise ValueError("Неверные настройки интерфейса.")
+    if not _valid_unit(session.controls.get("cluster_alpha", 0)):
+        raise ValueError("Порог соответствия α должен быть числом от 0 до 1.")
     if session.generation is not None:
         from .scenarios import validate_provenance
         validate_provenance(session.generation, session.items)
@@ -101,6 +124,7 @@ def validate_session(session: SessionData):
                 raise ValueError(f"Недопустимая настройка HDBSCAN: {name}.")
         if any(labels.count(group) < settings["min_cluster_size"] for group in groups):
             raise ValueError("Группа HDBSCAN меньше заданного минимального размера.")
+        _validate_membership(d, labels)
     if c is not None:
         if not isinstance(c, dict) or c.get("method") != "complete" or c.get("mode") not in ("count", "threshold", "auto"):
             raise ValueError("Неверные настройки кластеризации.")
@@ -109,6 +133,7 @@ def validate_session(session: SessionData):
             raise ValueError("Метки кластеров не соответствуют набору.")
         if sorted(set(labels)) != list(range(1, len(set(labels)) + 1)):
             raise ValueError("Номера кластеров должны быть последовательными, начиная с 1.")
+        _validate_membership(c, labels)
         if c["mode"] in ("count", "auto"):
             k = c.get("k")
             if isinstance(k, bool) or not isinstance(k, int) or not 1 <= k <= len(session.items) or len(set(labels)) != k:
@@ -161,16 +186,31 @@ def loads_session(text: str | bytes) -> SessionData:
         raise ValueError("Неверный формат JSON-сессии.") from e
 
 
-def dataset_csv(items, labels=None, hdbscan_labels=None) -> str:
+def dataset_csv(items, labels=None, hdbscan_labels=None, *,
+                scores=None, hdbscan_scores=None, cluster_alpha=0.) -> str:
     if any(v is not None and len(v) != len(items) for v in (labels, hdbscan_labels)):
         raise ValueError("Число меток не совпадает с числом величин.")
     output = io.StringIO()
     writer = csv.writer(output)
-    writer.writerow(["id", "sigma", "cluster"] +
-                    ([] if hdbscan_labels is None else ["hdbscan_cluster", "hdbscan_noise"]))
+    if not _valid_unit(cluster_alpha):
+        raise ValueError("Порог соответствия α должен быть числом от 0 до 1.")
+    profiles = []
+    for prefix, labs, values in [("cluster", labels, scores), ("hdbscan", hdbscan_labels, hdbscan_scores)]:
+        if values is not None:
+            _validate_scores(labs, values)
+            profiles.append((prefix, values))
+    columns = ["id", "sigma", "cluster"]
+    if hdbscan_labels is not None:
+        columns += ["hdbscan_cluster", "hdbscan_noise"]
+    for prefix, _ in profiles:
+        columns += [f"{prefix}_score", f"{prefix}_retained", f"{prefix}_alpha"]
+    writer.writerow(columns)
     for j, item in enumerate(items):
         row = [item.id, item.value.sigma, "" if labels is None else int(labels[j])]
         if hdbscan_labels is not None:
             row += [int(hdbscan_labels[j]), int(hdbscan_labels[j] == 0)]
+        for _, values in profiles:
+            u = values[j]
+            row += [u, int(u is not None and u >= cluster_alpha), cluster_alpha]
         writer.writerow(row)
     return output.getvalue()
